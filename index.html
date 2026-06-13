@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>一数打卡</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --navy: #0f172a;
+            --navy-light: #1e293b;
+            --teal: #0d9488;
+            --teal-light: #14b8a6;
+            --teal-bg: #f0fdfa;
+            --warm: #f59e0b;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --white: #ffffff;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-800: #1e293b;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius: 16px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html { font-size: 16px; }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-800);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overscroll-behavior-y: none;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* App Container */
+        #app {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            max-width: 430px;
+            margin: 0 auto;
+            background: var(--white);
+            position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.08);
+        }
+
+        /* Header */
+        .app-header {
+            padding: calc(12px + var(--safe-top)) 20px 12px;
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-100);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        /* Main Content */
+        .app-main {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: calc(80px + var(--safe-bottom));
+        }
+        .app-main::-webkit-scrollbar { display: none; }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-top: 1px solid var(--gray-100);
+            padding-bottom: var(--safe-bottom);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: calc(64px + var(--safe-bottom));
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 16px;
+            color: var(--gray-400);
+            text-decoration: none;
+            font-size: 0.65rem;
+            font-weight: 500;
+            transition: color 0.2s;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+        .nav-item.active { color: var(--teal); }
+        .nav-item svg { width: 24px; height: 24px; }
+
+        /* Page Sections */
+        .page { display: none; padding: 16px 20px; }
+        .page.active { display: block; }
+
+        /* ── HOME PAGE ── */
+        .home-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .avatar {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 1.1rem;
+        }
+        .user-meta h2 { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+        .user-meta p { font-size: 0.8rem; color: var(--gray-400); margin-top: 2px; }
+        .streak-badge {
+            display: flex; align-items: center; gap: 6px;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            padding: 8px 14px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #92400e;
+        }
+        .streak-badge .fire { font-size: 1.1rem; }
+
+        /* Progress Card */
+        .progress-card {
+            background: linear-gradient(135deg, var(--navy), var(--navy-light));
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            color: white;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-card::before {
+            content: ''; position: absolute;
+            top: -50%; right: -20%;
+            width: 200px; height: 200px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+        }
+        .progress-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .progress-title { font-size: 0.9rem; opacity: 0.7; }
+        .progress-days {
+            font-size: 2.5rem; font-weight: 900;
+            line-height: 1;
+        }
+        .progress-days span { font-size: 1rem; font-weight: 400; opacity: 0.6; }
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 100px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--teal-light), var(--teal));
+            border-radius: 100px;
+            transition: width 0.6s ease;
+        }
+        .progress-stats {
+            display: flex; justify-content: space-between;
+            font-size: 0.8rem; opacity: 0.6;
+        }
+
+        /* Today's Task */
+        .section-title {
+            font-size: 1.1rem; font-weight: 700;
+            color: var(--navy); margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .task-card {
+            background: var(--white);
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+        .task-card:active { transform: scale(0.98); }
+        .task-card.completed {
+            border-color: var(--success);
+            background: #f0fdf4;
+        }
+        .task-header {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 12px;
+        }
+        .task-check {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 2.5px solid var(--gray-300);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .task-card.completed .task-check {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        .task-check svg { width: 16px; height: 16px; color: white; opacity: 0; }
+        .task-card.completed .task-check svg { opacity: 1; }
+        .task-title { font-size: 1rem; font-weight: 600; color: var(--navy); }
+        .task-card.completed .task-title { text-decoration: line-through; opacity: 0.6; }
+        .task-meta {
+            display: flex; gap: 12px;
+            font-size: 0.8rem; color: var(--gray-400);
+            margin-left: 40px;
+        }
+        .task-meta span { display: flex; align-items: center; gap: 4px; }
+
+        /* Check-in Button */
+        .checkin-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(13,148,136,0.25);
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .checkin-btn:active { transform: scale(0.97); }
+        .checkin-btn:disabled {
+            background: var(--gray-300);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* ── STATS PAGE ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: 20px 16px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8rem; font-weight: 900;
+            color: var(--navy); line-height: 1;
+            margin-bottom: 6px;
+        }
+        .stat-label { font-size: 0.8rem; color: var(--gray-400); }
+
+        .calendar-section {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+        .calendar-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px;
+        }
+        .calendar-header h3 { font-size: 1rem; font-weight: 700; }
+        .calendar-nav {
+            display: flex; gap: 8px;
+        }
+        .calendar-nav button {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+            background: var(--white);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+        .calendar-day-header {
+            font-size: 0.7rem; color: var(--gray-400);
+            font-weight: 500;
+            padding: 8px 0;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--gray-600);
+            position: relative;
+        }
+        .calendar-day.other-month { color: var(--gray-300); }
+        .calendar-day.checked {
+            background: var(--teal-bg);
+            color: var(--teal);
+        }
+        .calendar-day.checked::after {
+            content: ''; position: absolute;
+            bottom: 4px; left: 50%; transform: translateX(-50%);
+            width: 4px; height: 4px;
+            background: var(--teal);
+            border-radius: 50%;
+        }
+        .calendar-day.today {
+            border: 2px solid var(--teal);
+            color: var(--teal);
+            font-weight: 700;
+        }
+
+        /* ── GROUP PAGE ── */
+        .group-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn-sm {
+            padding: 8px 16px;
+            background: var(--navy);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .leaderboard-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+        }
+        .rank-num {
+            width: 28px; text-align: center;
+            font-size: 0.9rem; font-weight: 700;
+            color: var(--gray-400);
+        }
+        .rank-num.top3 { color: var(--warm); }
+        .leaderboard-avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .leaderboard-info { flex: 1; }
+        .leaderboard-name { font-size: 0.95rem; font-weight: 600; }
+        .leaderboard-meta { font-size: 0.75rem; color: var(--gray-400); margin-top: 2px; }
+        .leaderboard-score {
+            font-size: 1.1rem; font-weight: 700;
+            color: var(--navy);
+        }
+
+        /* ── PROFILE PAGE ── */
+        .profile-header {
+            text-align: center;
+            padding: 24px 0;
+        }
+        .profile-avatar {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 900; font-size: 1.8rem;
+            margin: 0 auto 12px;
+        }
+        .profile-name { font-size: 1.2rem; font-weight: 700; }
+        .profile-grade { font-size: 0.85rem; color: var(--gray-400); margin-top: 4px; }
+
+        .settings-list {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        .settings-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .settings-item:last-child { border-bottom: none; }
+        .settings-label { font-size: 0.95rem; font-weight: 500; }
+        .settings-value {
+            display: flex; align-items: center; gap: 8px;
+            color: var(--gray-400); font-size: 0.9rem;
+        }
+
+        /* Toggle Switch */
+        .toggle {
+            width: 48px; height: 28px;
+            background: var(--gray-300);
+            border-radius: 100px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .toggle.active { background: var(--teal); }
+        .toggle::after {
+            content: ''; position: absolute;
+            top: 2px; left: 2px;
+            width: 24px; height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .toggle.active::after { transform: translateX(20px); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none; align-items: flex-end; justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-sheet {
+            background: var(--white);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            padding: 24px 20px calc(24px + var(--safe-bottom));
+            width: 100%; max-width: 430px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+        }
+        .modal-overlay.active .modal-sheet { transform: translateY(0); }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title { font-size: 1.2rem; font-weight: 700; }
+        .modal-close {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: none; background: var(--gray-100);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1.2rem;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; color: var(--gray-600); }
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus { outline: none; border-color: var(--teal); }
+        textarea.form-input { resize: none; min-height: 100px; }
+        .form-submit {
+            width: 100%;
+            padding: 16px;
+            background: var(--navy);
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in { animation: slideUp 0.4s ease-out; }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .pulse { animation: pulse 2s infinite; }
+
+        /* ═══════════════════════════════════════════════════
+           LOGIN / REGISTER PAGE STYLES
+           ═══════════════════════════════════════════════════ */
+        #auth-page {
+            display: none;
+            position: absolute;
+            inset: 0;
+            z-index: 500;
+            background: linear-gradient(160deg, var(--navy) 0%, var(--navy-light) 50%, #1a3a4a 100%);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 24px;
+            overflow-y: auto;
+        }
+        #auth-page.active {
+            display: flex;
+        }
+
+        .auth-logo {
+            width: 72px; height: 72px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 900; font-size: 1.6rem;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(13,148,136,0.35);
+        }
+        .auth-title {
+            color: white;
+            font-size: 1.6rem;
+            font-weight: 900;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        .auth-subtitle {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 360px;
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            padding: 28px 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            background: var(--gray-100);
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            background: none;
+            border-radius: 10px;
+            cursor: pointer;
+            color: var(--gray-400);
+            transition: all 0.25s;
+            font-family: inherit;
+        }
+        .auth-tab.active {
+            background: var(--white);
+            color: var(--navy);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
+
+        .auth-form .form-group { margin-bottom: 14px; }
+        .auth-form .form-input {
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-size: 0.95rem;
+        }
+        .auth-form .form-submit {
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            box-shadow: 0 4px 16px rgba(13,148,136,0.3);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 1rem;
+        }
+        .auth-form .form-submit:active { transform: scale(0.97); }
+        .auth-form .form-submit:disabled {
+            background: var(--gray-300);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .auth-error {
+            color: var(--danger);
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+            text-align: center;
+            min-height: 20px;
+        }
+
+        .auth-footer {
+            margin-top: 24px;
+            text-align: center;
+            color: rgba(255,255,255,0.35);
+            font-size: 0.75rem;
+        }
+
+        /* Logout button in profile */
+        .logout-btn {
+            width: 100%;
+            padding: 14px;
+            background: none;
+            border: 1.5px solid var(--danger);
+            color: var(--danger);
+            border-radius: var(--radius-lg);
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+        .logout-btn:active {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 18px; height: 18px;
+            border: 2.5px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Data export button */
+        .export-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--white);
+            border: 1.5px solid var(--gray-200);
+            color: var(--navy);
+            border-radius: var(--radius-lg);
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+        .export-btn:active { background: var(--gray-50); }
+
+        /* Plan list page */
+        .plan-list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .plan-list-item.completed-plan {
+            border-color: var(--success);
+            background: #f0fdf4;
+        }
+        .plan-day-num {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: var(--gray-100);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; font-weight: 700;
+            color: var(--gray-500);
+            flex-shrink: 0;
+        }
+        .plan-list-item.completed-plan .plan-day-num {
+            background: var(--success);
+            color: white;
+        }
+        .plan-list-info { flex: 1; }
+        .plan-list-title { font-size: 0.9rem; font-weight: 600; color: var(--navy); }
+        .plan-list-item.completed-plan .plan-list-title { opacity: 0.6; text-decoration: line-through; }
+        .plan-list-meta { font-size: 0.75rem; color: var(--gray-400); margin-top: 2px; }
+        .plan-phase-tag {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: var(--teal-bg);
+            color: var(--teal);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- ═══════════════════════════════════════════════════
+             AUTH PAGE (Login / Register)
+             ═══════════════════════════════════════════════════ -->
+        <div id="auth-page">
+            <div class="auth-logo">数</div>
+            <div class="auth-title">一数打卡</div>
+            <div class="auth-subtitle">初中数学 45 天暑假学习计划</div>
+
+            <div class="auth-card">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchAuthTab('login')">登录</button>
+                    <button class="auth-tab" onclick="switchAuthTab('register')">注册</button>
+                </div>
+
+                <div class="auth-error" id="auth-error"></div>
+
+                <!-- Login Form -->
+                <form class="auth-form active" id="login-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-input" id="login-username" placeholder="请输入用户名" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">密码</label>
+                        <input type="password" class="form-input" id="login-password" placeholder="请输入密码" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="form-submit" id="login-submit-btn">登录</button>
+                </form>
+
+                <!-- Register Form -->
+                <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-input" id="reg-username" placeholder="用于登录的唯一用户名" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">显示名称</label>
+                        <input type="text" class="form-input" id="reg-display-name" placeholder="你的昵称" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">密码</label>
+                        <input type="password" class="form-input" id="reg-password" placeholder="至少 6 位密码" required minlength="6" autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">确认密码</label>
+                        <input type="password" class="form-input" id="reg-password-confirm" placeholder="再次输入密码" required minlength="6" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="form-submit" id="reg-submit-btn">注册</button>
+                </form>
+            </div>
+
+            <div class="auth-footer">数据安全存储于 Supabase 云端</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             MAIN APP
+             ═══════════════════════════════════════════════════ -->
+        <!-- Header -->
+        <header class="app-header">
+            <h1 id="page-title">今日学习</h1>
+        </header>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- HOME PAGE -->
+            <div class="page active" id="page-home">
+                <div class="home-header">
+                    <div class="user-info">
+                        <div class="avatar" id="user-avatar">数</div>
+                        <div class="user-meta">
+                            <h2 id="user-name">同学</h2>
+                            <p id="user-grade-text">初一 · 45天计划</p>
+                        </div>
+                    </div>
+                    <div class="streak-badge">
+                        <span class="fire">&#x1F525;</span>
+                        <span id="streak-count">0</span>天
+                    </div>
+                </div>
+
+                <div class="progress-card">
+                    <div class="progress-header">
+                        <div>
+                            <div class="progress-title">已完成</div>
+                            <div class="progress-days"><span id="completed-days">0</span><span> / 45天</span></div>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>总学习 <strong id="total-minutes">0</strong> 分钟</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                </div>
+
+                <div class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    今日任务
+                </div>
+
+                <div class="task-card" id="today-task">
+                    <div class="task-header">
+                        <div class="task-check" id="task-check">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="task-title" id="task-title">加载中...</div>
+                    </div>
+                    <div class="task-meta">
+                        <span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span id="task-duration">90分钟</span>
+                        </span>
+                        <span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <span id="task-phase">第一阶段</span>
+                        </span>
+                    </div>
+                </div>
+
+                <button class="checkin-btn" id="checkin-btn" onclick="openCheckinModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    完成今日学习打卡
+                </button>
+            </div>
+
+            <!-- STATS PAGE -->
+            <div class="page" id="page-stats">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-days">0</div>
+                        <div class="stat-label">打卡天数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-hours">0</div>
+                        <div class="stat-label">学习时长(小时)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-streak">0</div>
+                        <div class="stat-label">连续打卡</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-progress">0%</div>
+                        <div class="stat-label">计划进度</div>
+                    </div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <h3 id="calendar-month-title">打卡日历</h3>
+                        <div class="calendar-nav">
+                            <button onclick="changeMonth(-1)">&#8249;</button>
+                            <button onclick="changeMonth(1)">&#8250;</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendar">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- GROUP PAGE -->
+            <div class="page" id="page-group">
+                <div class="group-header">
+                    <h2 style="font-size: 1.1rem; font-weight: 700;">学习小组</h2>
+                    <button class="btn-sm" onclick="showToast('功能开发中')">创建小组</button>
+                </div>
+                <div id="leaderboard">
+                    <!-- Generated by JS from Supabase -->
+                </div>
+            </div>
+
+            <!-- PROFILE PAGE -->
+            <div class="page" id="page-profile">
+                <div class="profile-header">
+                    <div class="profile-avatar" id="profile-avatar">数</div>
+                    <div class="profile-name" id="profile-name">同学</div>
+                    <div class="profile-grade" id="profile-grade-detail">初一 · 目标45天学完初中数学</div>
+                </div>
+
+                <div class="settings-list">
+                    <div class="settings-item">
+                        <span class="settings-label">每日提醒</span>
+                        <div class="toggle active" id="reminder-toggle" onclick="toggleReminder()"></div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">提醒时间</span>
+                        <div class="settings-value" id="setting-reminder-time">20:00 &#8250;</div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">每日目标时长</span>
+                        <div class="settings-value" id="setting-target-minutes">90分钟 &#8250;</div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">年级</span>
+                        <div class="settings-value" id="setting-grade">初一 &#8250;</div>
+                    </div>
+                </div>
+
+                <button class="export-btn" onclick="exportData()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    导出打卡数据
+                </button>
+
+                <button class="logout-btn" onclick="handleLogout()">退出登录</button>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchPage('home')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                首页
+            </button>
+            <button class="nav-item" onclick="switchPage('stats')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                统计
+            </button>
+            <button class="nav-item" onclick="switchPage('group')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                小组
+            </button>
+            <button class="nav-item" onclick="switchPage('profile')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                我的
+            </button>
+        </nav>
+
+        <!-- Check-in Modal -->
+        <div class="modal-overlay" id="checkin-modal">
+            <div class="modal-sheet">
+                <div class="modal-header">
+                    <div class="modal-title">学习打卡</div>
+                    <button class="modal-close" onclick="closeCheckinModal()">&times;</button>
+                </div>
+                <form onsubmit="submitCheckin(event)">
+                    <div class="form-group">
+                        <label class="form-label">学习时长（分钟）</label>
+                        <input type="number" class="form-input" id="checkin-duration" value="90" min="1" max="300">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">学习心得</label>
+                        <textarea class="form-input" id="checkin-note" placeholder="今天学到了什么？有什么收获？"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">心情</label>
+                        <div style="display:flex; gap:12px;">
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                                <input type="radio" name="mood" value="good" checked> &#x1F60A; 很好
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                                <input type="radio" name="mood" value="normal"> &#x1F610; 一般
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                                <input type="radio" name="mood" value="bad"> &#x1F614; 困难
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="form-submit" id="checkin-submit-btn">确认打卡</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════
+    //  45天学习计划 PLAN_DATA (完全保留原版数据)
+    // ═══════════════════════════════════════════════════════════
+    const PLAN_DATA = [
+        // 第一阶段: 基础速成 (Day 1-10)
+        { day: 1,  title: '数与式的基本概念',       phase: '基础速成', phaseNum: 1, duration: 90 },
+        { day: 2,  title: '整式运算与乘法公式',     phase: '基础速成', phaseNum: 1, duration: 90 },
+        { day: 3,  title: '因式分解（基础方法）',   phase: '基础速成', phaseNum: 1, duration: 90 },
+        { day: 4,  title: '因式分解（进阶技巧）',   phase: '基础速成', phaseNum: 1, duration: 90 },
+        { day: 5,  title: '分式与二次根式',         phase: '基础速成', phaseNum: 1, duration: 90 },
+        { day: 6,  title: '分式与二次根式练习',     phase: '基础速成', phaseNum: 1, duration: 90 },
+        { day: 7,  title: '一元一次方程与二元一次方程组', phase: '基础速成', phaseNum: 1, duration: 90 },
+        { day: 8,  title: '一元二次方程（解法）',   phase: '基础速成', phaseNum: 1, duration: 90 },
+        { day: 9,  title: '韦达定理与含参方程',     phase: '基础速成', phaseNum: 1, duration: 90 },
+        { day: 10, title: '阶段复习一：数与式、方程', phase: '基础速成', phaseNum: 1, duration: 90 },
+
+        // 第二阶段: 方程不等式与基础函数 (Day 11-20)
+        { day: 11, title: '不等式与不等式组',       phase: '函数基础', phaseNum: 2, duration: 90 },
+        { day: 12, title: '含参不等式与实际应用',   phase: '函数基础', phaseNum: 2, duration: 90 },
+        { day: 13, title: '一次函数基础',           phase: '函数基础', phaseNum: 2, duration: 90 },
+        { day: 14, title: '一次函数应用与反比例函数', phase: '函数基础', phaseNum: 2, duration: 90 },
+        { day: 15, title: '函数图像与性质综合',     phase: '函数基础', phaseNum: 2, duration: 90 },
+        { day: 16, title: '二次函数基础（图像与性质）', phase: '函数基础', phaseNum: 2, duration: 90 },
+        { day: 17, title: '二次函数与方程、不等式', phase: '函数基础', phaseNum: 2, duration: 90 },
+        { day: 18, title: '二次函数三种表达式转化', phase: '函数基础', phaseNum: 2, duration: 90 },
+        { day: 19, title: '二次函数应用题',         phase: '函数基础', phaseNum: 2, duration: 90 },
+        { day: 20, title: '阶段复习二：函数基础',   phase: '函数基础', phaseNum: 2, duration: 90 },
+
+        // 第三阶段: 几何基础 (Day 21-30)
+        { day: 21, title: '三角形全等判定与性质',   phase: '几何基础', phaseNum: 3, duration: 90 },
+        { day: 22, title: '相似三角形判定与性质',   phase: '几何基础', phaseNum: 3, duration: 90 },
+        { day: 23, title: '相似三角形深入',         phase: '几何基础', phaseNum: 3, duration: 90 },
+        { day: 24, title: '四边形性质与判定',       phase: '几何基础', phaseNum: 3, duration: 90 },
+        { day: 25, title: '圆的基础知识',           phase: '几何基础', phaseNum: 3, duration: 90 },
+        { day: 26, title: '圆的性质',               phase: '几何基础', phaseNum: 3, duration: 90 },
+        { day: 27, title: '圆中线段计算',           phase: '几何基础', phaseNum: 3, duration: 90 },
+        { day: 28, title: '几何变换',               phase: '几何基础', phaseNum: 3, duration: 90 },
+        { day: 29, title: '折叠问题与动态几何',     phase: '几何基础', phaseNum: 3, duration: 90 },
+        { day: 30, title: '阶段复习三：几何基础',   phase: '几何基础', phaseNum: 3, duration: 90 },
+
+        // 第四阶段: 几何模型与压轴技巧 (Day 31-40)
+        { day: 31, title: '辅助线构造技巧',         phase: '压轴技巧', phaseNum: 4, duration: 90 },
+        { day: 32, title: '手拉手模型',             phase: '压轴技巧', phaseNum: 4, duration: 90 },
+        { day: 33, title: '一线三垂直与半角模型',   phase: '压轴技巧', phaseNum: 4, duration: 90 },
+        { day: 34, title: '将军饮马模型',           phase: '压轴技巧', phaseNum: 4, duration: 90 },
+        { day: 35, title: '胡不归问题与阿氏圆',     phase: '压轴技巧', phaseNum: 4, duration: 90 },
+        { day: 36, title: '隐圆问题',               phase: '压轴技巧', phaseNum: 4, duration: 90 },
+        { day: 37, title: '四点共圆与托勒密定理',   phase: '压轴技巧', phaseNum: 4, duration: 90 },
+        { day: 38, title: '瓜豆原理',               phase: '压轴技巧', phaseNum: 4, duration: 90 },
+        { day: 39, title: '建系法解几何题',         phase: '压轴技巧', phaseNum: 4, duration: 90 },
+        { day: 40, title: '阶段复习四：几何模型',   phase: '压轴技巧', phaseNum: 4, duration: 90 },
+
+        // 第五阶段: 函数压轴与实战演练 (Day 41-45)
+        { day: 41, title: '动点与特殊图形存在性',   phase: '实战演练', phaseNum: 5, duration: 90 },
+        { day: 42, title: '二次函数与特殊三角形（上）', phase: '实战演练', phaseNum: 5, duration: 90 },
+        { day: 43, title: '二次函数与特殊三角形（下）', phase: '实战演练', phaseNum: 5, duration: 90 },
+        { day: 44, title: '实战中考试卷',           phase: '实战演练', phaseNum: 5, duration: 90 },
+        { day: 45, title: '总复习与知识框架梳理',   phase: '实战演练', phaseNum: 5, duration: 90 }
+    ];
+
+    // ═══════════════════════════════════════════════════════════
+    //  Supabase 初始化
+    // ═══════════════════════════════════════════════════════════
+    const SUPABASE_URL = window.__SUPABASE_CONFIG__?.url || 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG__?.key || 'YOUR_SUPABASE_ANON_KEY';
+
+    let supabase = null;
+    try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch (e) {
+        console.warn('Supabase 初始化失败，请检查配置:', e);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  全局状态
+    // ═══════════════════════════════════════════════════════════
+    let currentPage = 'home';
+    let currentMonth = new Date();
+    let checkinDates = [];          // ['2026-06-13', ...]
+    let checkins = [];              // full checkin records from Supabase
+    let todayPlan = null;
+    let userProfile = null;         // from profiles table
+    let userSettings = null;        // from settings table
+    let currentUser = null;          // from supabase.auth.getUser()
+    let todayCheckedIn = false;
+
+    // ═══════════════════════════════════════════════════════════
+    //  Auth: Tab switching
+    // ═══════════════════════════════════════════════════════════
+    function switchAuthTab(tab) {
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        document.getElementById('auth-error').textContent = '';
+        if (tab === 'login') {
+            document.querySelectorAll('.auth-tab')[0].classList.add('active');
+            document.getElementById('login-form').classList.add('active');
+        } else {
+            document.querySelectorAll('.auth-tab')[1].classList.add('active');
+            document.getElementById('register-form').classList.add('active');
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Auth: Register
+    // ═══════════════════════════════════════════════════════════
+    async function handleRegister(e) {
+        e.preventDefault();
+        const username = document.getElementById('reg-username').value.trim();
+        const displayName = document.getElementById('reg-display-name').value.trim();
+        const password = document.getElementById('reg-password').value;
+        const passwordConfirm = document.getElementById('reg-password-confirm').value;
+        const errorEl = document.getElementById('auth-error');
+        const btn = document.getElementById('reg-submit-btn');
+
+        errorEl.textContent = '';
+
+        if (password !== passwordConfirm) {
+            errorEl.textContent = '两次输入的密码不一致';
+            return;
+        }
+        if (username.length < 2) {
+            errorEl.textContent = '用户名至少 2 个字符';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner"></span>注册中...';
+
+        try {
+            // Sign up with email-like format: username@yishu.app
+            const email = `${username}@yishu.app`;
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: {
+                        username: username,
+                        display_name: displayName,
+                        role: 'student'
+                    }
+                }
+            });
+
+            if (error) {
+                if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+                    errorEl.textContent = '该用户名已被注册';
+                } else {
+                    errorEl.textContent = error.message;
+                }
+                btn.disabled = false;
+                btn.textContent = '注册';
+                return;
+            }
+
+            if (data.user && !data.session) {
+                // Email confirmation required (if enabled in Supabase)
+                errorEl.style.color = 'var(--teal)';
+                errorEl.textContent = '注册成功！请检查邮箱确认（或直接登录）';
+                btn.disabled = false;
+                btn.textContent = '注册';
+                // Auto switch to login
+                setTimeout(() => {
+                    switchAuthTab('login');
+                    document.getElementById('login-username').value = username;
+                    errorEl.textContent = '';
+                    errorEl.style.color = 'var(--danger)';
+                }, 1500);
+            } else if (data.session) {
+                // Auto-login after register
+                await onAuthSuccess(data.user);
+            }
+        } catch (err) {
+            errorEl.textContent = '注册失败，请稍后重试';
+            console.error('Register error:', err);
+        }
+
+        btn.disabled = false;
+        btn.textContent = '注册';
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Auth: Login
+    // ═══════════════════════════════════════════════════════════
+    async function handleLogin(e) {
+        e.preventDefault();
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+        const errorEl = document.getElementById('auth-error');
+        const btn = document.getElementById('login-submit-btn');
+
+        errorEl.textContent = '';
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner"></span>登录中...';
+
+        try {
+            const email = `${username}@yishu.app`;
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                if (error.message.includes('Invalid login') || error.message.includes('Invalid credentials')) {
+                    errorEl.textContent = '用户名或密码错误';
+                } else {
+                    errorEl.textContent = error.message;
+                }
+                btn.disabled = false;
+                btn.textContent = '登录';
+                return;
+            }
+
+            await onAuthSuccess(data.user);
+        } catch (err) {
+            errorEl.textContent = '登录失败，请稍后重试';
+            console.error('Login error:', err);
+        }
+
+        btn.disabled = false;
+        btn.textContent = '登录';
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Auth: Logout
+    // ═══════════════════════════════════════════════════════════
+    async function handleLogout() {
+        if (!confirm('确定要退出登录吗？')) return;
+        try {
+            await supabase.auth.signOut();
+        } catch (e) {
+            console.error('Logout error:', e);
+        }
+        currentUser = null;
+        userProfile = null;
+        userSettings = null;
+        checkins = [];
+        checkinDates = [];
+        todayCheckedIn = false;
+        document.getElementById('auth-page').classList.add('active');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Auth: Success handler - load user data
+    // ═══════════════════════════════════════════════════════════
+    async function onAuthSuccess(user) {
+        currentUser = user;
+        document.getElementById('auth-page').classList.remove('active');
+
+        // Load profile, settings, and checkins in parallel
+        await Promise.all([
+            loadProfile(),
+            loadSettings(),
+            loadCheckins()
+        ]);
+
+        loadTodayPlan();
+        updateUI();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Data: Load profile
+    // ═══════════════════════════════════════════════════════════
+    async function loadProfile() {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (error) {
+                console.error('Load profile error:', error);
+                // Fallback to user metadata
+                const meta = currentUser.user_metadata || {};
+                userProfile = {
+                    display_name: meta.display_name || meta.username || '同学',
+                    grade: '初一',
+                    avatar_color: '#0d9488'
+                };
+            } else {
+                userProfile = data;
+            }
+        } catch (e) {
+            console.error('Load profile exception:', e);
+            const meta = currentUser.user_metadata || {};
+            userProfile = {
+                display_name: meta.display_name || meta.username || '同学',
+                grade: '初一',
+                avatar_color: '#0d9488'
+            };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Data: Load settings
+    // ═══════════════════════════════════════════════════════════
+    async function loadSettings() {
+        try {
+            const { data, error } = await supabase
+                .from('settings')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .single();
+
+            if (error) {
+                console.error('Load settings error:', error);
+                userSettings = {
+                    reminder: true,
+                    reminder_time: '20:00',
+                    target_minutes: 90,
+                    current_day_index: 0
+                };
+            } else {
+                userSettings = data;
+            }
+        } catch (e) {
+            console.error('Load settings exception:', e);
+            userSettings = {
+                reminder: true,
+                reminder_time: '20:00',
+                target_minutes: 90,
+                current_day_index: 0
+            };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Data: Load checkins
+    // ═══════════════════════════════════════════════════════════
+    async function loadCheckins() {
+        try {
+            const { data, error } = await supabase
+                .from('checkins')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('checked_in_at', { ascending: true });
+
+            if (error) {
+                console.error('Load checkins error:', error);
+                checkins = [];
+            } else {
+                checkins = data || [];
+            }
+
+            // Build checkinDates array (unique dates)
+            checkinDates = [...new Set(
+                checkins.map(c => {
+                    const d = new Date(c.checked_in_at);
+                    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                })
+            )];
+        } catch (e) {
+            console.error('Load checkins exception:', e);
+            checkins = [];
+            checkinDates = [];
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Data: Save settings to Supabase
+    // ═══════════════════════════════════════════════════════════
+    async function saveSettings(updates) {
+        if (!currentUser) return;
+        try {
+            const { error } = await supabase
+                .from('settings')
+                .upsert({
+                    user_id: currentUser.id,
+                    ...updates,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
+
+            if (error) console.error('Save settings error:', error);
+        } catch (e) {
+            console.error('Save settings exception:', e);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Page Switching
+    // ═══════════════════════════════════════════════════════════
+    function switchPage(page) {
+        currentPage = page;
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(`page-${page}`).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        event.target.closest('.nav-item').classList.add('active');
+
+        const titles = { home: '今日学习', stats: '学习统计', group: '学习小组', profile: '个人中心' };
+        document.getElementById('page-title').textContent = titles[page];
+
+        if (page === 'stats') renderCalendar();
+        if (page === 'group') loadLeaderboard();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Load Today's Plan
+    // ═══════════════════════════════════════════════════════════
+    function loadTodayPlan() {
+        const dayIndex = userSettings ? (userSettings.current_day_index || 0) : 0;
+        const plan = PLAN_DATA[Math.min(dayIndex, PLAN_DATA.length - 1)];
+        todayPlan = plan;
+
+        document.getElementById('task-title').textContent = plan.title;
+        document.getElementById('task-duration').textContent = plan.duration + '分钟';
+        document.getElementById('task-phase').textContent = plan.phase;
+
+        // Check if today already checked in
+        const today = new Date().toISOString().split('T')[0];
+        todayCheckedIn = checkinDates.includes(today);
+
+        if (todayCheckedIn) {
+            document.getElementById('today-task').classList.add('completed');
+            document.getElementById('checkin-btn').disabled = true;
+            document.getElementById('checkin-btn').innerHTML = '&#x2705; 今日已打卡';
+        } else {
+            document.getElementById('today-task').classList.remove('completed');
+            document.getElementById('checkin-btn').disabled = false;
+            document.getElementById('checkin-btn').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 完成今日学习打卡';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Update UI
+    // ═══════════════════════════════════════════════════════════
+    function updateUI() {
+        // User info
+        const displayName = userProfile ? userProfile.display_name : '同学';
+        const grade = userProfile ? (userProfile.grade || '初一') : '初一';
+        const firstChar = displayName.charAt(0);
+
+        document.getElementById('user-avatar').textContent = firstChar;
+        document.getElementById('user-name').textContent = displayName;
+        document.getElementById('user-grade-text').textContent = `${grade} · 45天计划`;
+
+        document.getElementById('profile-avatar').textContent = firstChar;
+        document.getElementById('profile-name').textContent = displayName;
+        document.getElementById('profile-grade-detail').textContent = `${grade} · 目标45天学完初中数学`;
+
+        // Settings
+        if (userSettings) {
+            const toggle = document.getElementById('reminder-toggle');
+            if (userSettings.reminder) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+            document.getElementById('setting-reminder-time').textContent = (userSettings.reminder_time || '20:00') + ' \u203A';
+            document.getElementById('setting-target-minutes').textContent = (userSettings.target_minutes || 90) + '分钟 \u203A';
+            document.getElementById('setting-grade').textContent = grade + ' \u203A';
+        }
+
+        // Stats
+        updateStats();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Check-in Modal
+    // ═══════════════════════════════════════════════════════════
+    function openCheckinModal() {
+        if (todayCheckedIn) return;
+        if (userSettings) {
+            document.getElementById('checkin-duration').value = userSettings.target_minutes || 90;
+        }
+        document.getElementById('checkin-modal').classList.add('active');
+    }
+    function closeCheckinModal() {
+        document.getElementById('checkin-modal').classList.remove('active');
+    }
+
+    async function submitCheckin(e) {
+        e.preventDefault();
+        const duration = parseInt(document.getElementById('checkin-duration').value) || 90;
+        const note = document.getElementById('checkin-note').value.trim();
+        const mood = document.querySelector('input[name="mood"]:checked').value;
+        const btn = document.getElementById('checkin-submit-btn');
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner"></span>提交中...';
+
+        try {
+            const dayIndex = userSettings ? (userSettings.current_day_index || 0) : 0;
+            const plan = PLAN_DATA[Math.min(dayIndex, PLAN_DATA.length - 1)];
+
+            // Insert checkin record to Supabase
+            const { data, error } = await supabase
+                .from('checkins')
+                .insert({
+                    user_id: currentUser.id,
+                    plan_day: plan.day,
+                    plan_title: plan.title,
+                    plan_phase: plan.phase,
+                    plan_phase_num: plan.phaseNum,
+                    duration: duration,
+                    note: note,
+                    mood: mood
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Submit checkin error:', error);
+                showToast('打卡失败，请重试');
+                btn.disabled = false;
+                btn.textContent = '确认打卡';
+                return;
+            }
+
+            // Update settings: advance day index
+            const nextDayIndex = Math.min(dayIndex + 1, PLAN_DATA.length - 1);
+            await saveSettings({ current_day_index: nextDayIndex });
+            userSettings.current_day_index = nextDayIndex;
+
+            // Add to local state
+            checkins.push(data);
+            const today = new Date().toISOString().split('T')[0];
+            if (!checkinDates.includes(today)) {
+                checkinDates.push(today);
+            }
+            todayCheckedIn = true;
+
+            // Update UI
+            document.getElementById('today-task').classList.add('completed');
+            document.getElementById('checkin-btn').disabled = true;
+            document.getElementById('checkin-btn').innerHTML = '&#x2705; 今日已打卡';
+
+            updateStats();
+            closeCheckinModal();
+            showToast('打卡成功！继续加油！');
+        } catch (err) {
+            console.error('Submit checkin exception:', err);
+            showToast('打卡失败，请重试');
+        }
+
+        btn.disabled = false;
+        btn.textContent = '确认打卡';
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Stats
+    // ═══════════════════════════════════════════════════════════
+    function updateStats() {
+        const completed = checkinDates.length;
+        const totalMinutes = checkins.reduce((sum, c) => sum + (c.duration || 0), 0);
+        const progress = Math.round((completed / 45) * 100);
+        const streak = calculateStreak();
+
+        document.getElementById('completed-days').textContent = completed;
+        document.getElementById('total-minutes').textContent = totalMinutes;
+        document.getElementById('progress-fill').style.width = progress + '%';
+        document.getElementById('progress-percent').textContent = progress + '%';
+        document.getElementById('streak-count').textContent = streak;
+
+        document.getElementById('stat-days').textContent = completed;
+        document.getElementById('stat-hours').textContent = (totalMinutes / 60).toFixed(1);
+        document.getElementById('stat-streak').textContent = streak;
+        document.getElementById('stat-progress').textContent = progress + '%';
+    }
+
+    function calculateStreak() {
+        if (checkinDates.length === 0) return 0;
+        const sorted = [...checkinDates].sort().reverse();
+        let streak = 0;
+        let checkDate = new Date();
+        checkDate.setHours(0,0,0,0);
+
+        // Check if today is checked in; if not, start from yesterday
+        const todayStr = checkDate.toISOString().split('T')[0];
+        if (!checkinDates.includes(todayStr)) {
+            checkDate.setDate(checkDate.getDate() - 1);
+        }
+
+        for (let i = 0; i < 365; i++) {
+            const dateStr = checkDate.toISOString().split('T')[0];
+            if (checkinDates.includes(dateStr)) {
+                streak++;
+                checkDate.setDate(checkDate.getDate() - 1);
+            } else {
+                break;
+            }
+        }
+        return streak;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Calendar
+    // ═══════════════════════════════════════════════════════════
+    function renderCalendar() {
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        const calendar = document.getElementById('calendar');
+        calendar.innerHTML = '';
+
+        const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+        document.getElementById('calendar-month-title').textContent = `${year}年${monthNames[month]} 打卡日历`;
+
+        const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+        dayNames.forEach(d => {
+            const el = document.createElement('div');
+            el.className = 'calendar-day-header';
+            el.textContent = d;
+            calendar.appendChild(el);
+        });
+
+        for (let i = 0; i < firstDay; i++) {
+            const el = document.createElement('div');
+            el.className = 'calendar-day other-month';
+            calendar.appendChild(el);
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const el = document.createElement('div');
+            el.className = 'calendar-day';
+            el.textContent = day;
+
+            if (dateStr === today) el.classList.add('today');
+            if (checkinDates.includes(dateStr)) el.classList.add('checked');
+
+            calendar.appendChild(el);
+        }
+    }
+
+    function changeMonth(delta) {
+        currentMonth.setMonth(currentMonth.getMonth() + delta);
+        renderCalendar();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Leaderboard (Group page)
+    // ═══════════════════════════════════════════════════════════
+    async function loadLeaderboard() {
+        const container = document.getElementById('leaderboard');
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--gray-400);">加载中...</div>';
+
+        try {
+            // Query all profiles with their checkin counts
+            const { data: profiles, error } = await supabase
+                .from('profiles')
+                .select('id, username, display_name, avatar_color');
+
+            if (error) {
+                console.error('Load leaderboard error:', error);
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--gray-400);">暂无数据</div>';
+                return;
+            }
+
+            // Get checkin counts for each user
+            const { data: checkinCounts, error: countError } = await supabase
+                .from('checkins')
+                .select('user_id');
+
+            if (countError) {
+                console.error('Load checkin counts error:', countError);
+            }
+
+            // Count checkins per user
+            const userCounts = {};
+            if (checkinCounts) {
+                checkinCounts.forEach(c => {
+                    userCounts[c.user_id] = (userCounts[c.user_id] || 0) + 1;
+                });
+            }
+
+            // Sort by checkin count
+            const sorted = (profiles || []).map(p => ({
+                ...p,
+                checkinCount: userCounts[p.id] || 0
+            })).sort((a, b) => b.checkinCount - a.checkinCount);
+
+            if (sorted.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--gray-400);">暂无其他同学</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            sorted.forEach((user, idx) => {
+                const isMe = currentUser && user.id === currentUser.id;
+                const rank = idx + 1;
+                const firstChar = (user.display_name || user.username || '?').charAt(0);
+                const avatarColor = user.avatar_color || '#0d9488';
+
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                if (isMe) item.style.borderColor = 'var(--teal)';
+                item.innerHTML = `
+                    <div class="rank-num ${rank <= 3 ? 'top3' : ''}">${rank}</div>
+                    <div class="leaderboard-avatar" style="background:linear-gradient(135deg, ${avatarColor}, ${avatarColor}cc)">${firstChar}</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">${isMe ? '你' : (user.display_name || user.username)}</div>
+                        <div class="leaderboard-meta">打卡 ${user.checkinCount} 天</div>
+                    </div>
+                    <div class="leaderboard-score">${user.checkinCount}天</div>
+                `;
+                container.appendChild(item);
+            });
+        } catch (e) {
+            console.error('Load leaderboard exception:', e);
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--gray-400);">加载失败</div>';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Toggle Reminder
+    // ═══════════════════════════════════════════════════════════
+    function toggleReminder() {
+        const toggle = document.getElementById('reminder-toggle');
+        toggle.classList.toggle('active');
+        const isOn = toggle.classList.contains('active');
+        if (userSettings) {
+            userSettings.reminder = isOn;
+            saveSettings({ reminder: isOn });
+        }
+        showToast(isOn ? '提醒已开启' : '提醒已关闭');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Data Export
+    // ═══════════════════════════════════════════════════════════
+    function exportData() {
+        if (checkins.length === 0) {
+            showToast('暂无打卡数据可导出');
+            return;
+        }
+
+        const exportObj = {
+            user: userProfile ? {
+                username: userProfile.username,
+                display_name: userProfile.display_name,
+                grade: userProfile.grade
+            } : {},
+            settings: userSettings,
+            checkins: checkins.map(c => ({
+                date: c.checked_in_at,
+                plan_day: c.plan_day,
+                plan_title: c.plan_title,
+                plan_phase: c.plan_phase,
+                duration: c.duration,
+                note: c.note,
+                mood: c.mood
+            })),
+            exported_at: new Date().toISOString()
+        };
+
+        const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `一数打卡数据_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('数据导出成功');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Toast
+    // ═══════════════════════════════════════════════════════════
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: white;
+            padding: 12px 24px; border-radius: 100px;
+            font-size: 0.9rem; z-index: 2000;
+            animation: fadeIn 0.2s;
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Init: Check existing session
+    // ═══════════════════════════════════════════════════════════
+    (async function init() {
+        if (!supabase) {
+            // Supabase not configured, show auth page with error hint
+            document.getElementById('auth-page').classList.add('active');
+            document.getElementById('auth-error').textContent = 'Supabase 未配置，请在部署时设置环境变量';
+            return;
+        }
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (session && session.user) {
+                currentUser = session.user;
+                await onAuthSuccess(session.user);
+            } else {
+                // No session, show auth page
+                document.getElementById('auth-page').classList.add('active');
+            }
+        } catch (e) {
+            console.error('Init error:', e);
+            document.getElementById('auth-page').classList.add('active');
+        }
+
+        // Listen for auth state changes (e.g., tab sync)
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                userProfile = null;
+                userSettings = null;
+                checkins = [];
+                checkinDates = [];
+                todayCheckedIn = false;
+                document.getElementById('auth-page').classList.add('active');
+            } else if (event === 'SIGNED_IN' && session && session.user) {
+                currentUser = session.user;
+                await onAuthSuccess(session.user);
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

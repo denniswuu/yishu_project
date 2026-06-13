@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一数打卡系统 - 管理端</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --navy: #0f172a;
+            --navy-light: #1e293b;
+            --navy-lighter: #334155;
+            --teal: #0d9488;
+            --teal-light: #14b8a6;
+            --teal-dark: #0f766e;
+            --teal-bg: #f0fdfa;
+            --warm: #f59e0b;
+            --danger: #ef4444;
+            --danger-bg: #fef2f2;
+            --success: #22c55e;
+            --success-bg: #f0fdf4;
+            --info: #3b82f6;
+            --info-bg: #eff6ff;
+            --white: #ffffff;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-800: #1e293b;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { font-size: 16px; }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-800);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        /* ── LOGIN PAGE ── */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 50%, #0c4a6e 100%);
+            padding: 20px;
+        }
+        .login-card {
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+        }
+        .login-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .login-logo .logo-icon {
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .login-logo .logo-icon svg { width: 36px; height: 36px; color: white; }
+        .login-logo h1 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--navy);
+        }
+        .login-logo p {
+            font-size: 0.85rem;
+            color: var(--gray-400);
+            margin-top: 4px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-family: inherit;
+            color: var(--gray-800);
+            transition: all 0.2s;
+            background: var(--white);
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+        }
+        .form-input::placeholder { color: var(--gray-300); }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 16px rgba(13,148,136,0.3);
+            margin-top: 8px;
+        }
+        .login-btn:hover { box-shadow: 0 6px 20px rgba(13,148,136,0.4); transform: translateY(-1px); }
+        .login-btn:active { transform: translateY(0); }
+        .login-btn:disabled { background: var(--gray-300); box-shadow: none; cursor: not-allowed; }
+        .login-error {
+            background: var(--danger-bg);
+            color: var(--danger);
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .login-error.show { display: flex; }
+
+        /* ── ADMIN LAYOUT ── */
+        .admin-app { display: none; min-height: 100vh; }
+        .admin-app.active { display: flex; flex-direction: column; }
+
+        /* Sidebar */
+        .admin-sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, var(--navy) 0%, var(--navy-light) 100%);
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar-header h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-header h2 svg { width: 24px; height: 24px; color: var(--teal-light); }
+        .sidebar-header .admin-badge {
+            display: inline-block;
+            background: rgba(13,148,136,0.2);
+            color: var(--teal-light);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 100px;
+            margin-top: 8px;
+        }
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            overflow-y: auto;
+        }
+        .nav-section-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.35);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 12px 12px 8px;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 2px;
+            border: none;
+            background: none;
+            width: 100%;
+            font-family: inherit;
+        }
+        .sidebar-link:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9); }
+        .sidebar-link.active { background: rgba(13,148,136,0.2); color: var(--teal-light); }
+        .sidebar-link svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .sidebar-footer {
+            padding: 16px 12px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar-footer .sidebar-link { color: rgba(255,255,255,0.4); }
+        .sidebar-footer .sidebar-link:hover { color: var(--danger); }
+
+        /* Main Content */
+        .admin-main {
+            flex: 1;
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+        .admin-topbar {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 32px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .topbar-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: var(--gray-600);
+        }
+        .topbar-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+        }
+        .btn svg { width: 16px; height: 16px; }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            color: white;
+            box-shadow: 0 2px 8px rgba(13,148,136,0.25);
+        }
+        .btn-primary:hover { box-shadow: 0 4px 12px rgba(13,148,136,0.35); }
+        .btn-secondary {
+            background: var(--white);
+            color: var(--gray-600);
+            border: 1.5px solid var(--gray-200);
+        }
+        .btn-secondary:hover { border-color: var(--gray-300); background: var(--gray-50); }
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+        .admin-content {
+            padding: 32px;
+            max-width: 1200px;
+        }
+
+        /* ── DASHBOARD ── */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        .dash-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            transition: all 0.2s;
+        }
+        .dash-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .dash-card-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .dash-card-icon svg { width: 24px; height: 24px; }
+        .dash-card-icon.teal { background: var(--teal-bg); color: var(--teal); }
+        .dash-card-icon.blue { background: var(--info-bg); color: var(--info); }
+        .dash-card-icon.amber { background: #fef3c7; color: var(--warm); }
+        .dash-card-icon.green { background: var(--success-bg); color: var(--success); }
+        .dash-card-info { flex: 1; }
+        .dash-card-value {
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: var(--navy);
+            line-height: 1.2;
+        }
+        .dash-card-label {
+            font-size: 0.8rem;
+            color: var(--gray-400);
+            margin-top: 4px;
+        }
+
+        /* Dashboard Recent Activity */
+        .dash-section {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .dash-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .dash-section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .activity-list { display: flex; flex-direction: column; gap: 12px; }
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        .activity-info { flex: 1; }
+        .activity-name { font-size: 0.9rem; font-weight: 600; color: var(--navy); }
+        .activity-desc { font-size: 0.8rem; color: var(--gray-400); margin-top: 2px; }
+        .activity-time { font-size: 0.75rem; color: var(--gray-400); white-space: nowrap; }
+
+        /* ── STUDENT TABLE ── */
+        .table-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .table-search {
+            position: relative;
+            flex: 1;
+            max-width: 360px;
+        }
+        .table-search input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: var(--gray-800);
+            transition: all 0.2s;
+            background: var(--white);
+        }
+        .table-search input:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(13,148,136,0.1); }
+        .table-search svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px; height: 18px;
+            color: var(--gray-400);
+        }
+        .table-filters {
+            display: flex;
+            gap: 8px;
+        }
+        .filter-btn {
+            padding: 8px 14px;
+            border-radius: var(--radius);
+            border: 1.5px solid var(--gray-200);
+            background: var(--white);
+            font-size: 0.8rem;
+            font-weight: 500;
+            font-family: inherit;
+            color: var(--gray-500);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .filter-btn:hover { border-color: var(--gray-300); }
+        .filter-btn.active { border-color: var(--teal); color: var(--teal); background: var(--teal-bg); }
+        .filter-btn svg { width: 14px; height: 14px; }
+
+        .data-table-wrapper {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table thead th {
+            background: var(--gray-50);
+            padding: 14px 16px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            border-bottom: 1px solid var(--gray-200);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .data-table thead th:hover { color: var(--gray-700); }
+        .data-table thead th.sorted { color: var(--teal); }
+        .data-table thead th .sort-icon { margin-left: 4px; font-size: 0.7rem; }
+        .data-table tbody tr {
+            border-bottom: 1px solid var(--gray-100);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .data-table tbody tr:hover { background: var(--gray-50); }
+        .data-table tbody tr:last-child { border-bottom: none; }
+        .data-table tbody td {
+            padding: 14px 16px;
+            font-size: 0.88rem;
+            color: var(--gray-700);
+            vertical-align: middle;
+        }
+        .student-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .student-cell .avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        .student-cell .name { font-weight: 600; color: var(--navy); }
+        .student-cell .username { font-size: 0.78rem; color: var(--gray-400); }
+        .grade-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--teal-bg);
+            color: var(--teal-dark);
+        }
+        .progress-bar-mini {
+            width: 100%;
+            max-width: 120px;
+            height: 6px;
+            background: var(--gray-200);
+            border-radius: 100px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        .progress-bar-mini .fill {
+            height: 100%;
+            border-radius: 100px;
+            background: linear-gradient(90deg, var(--teal), var(--teal-light));
+            transition: width 0.4s ease;
+        }
+        .progress-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--navy);
+        }
+        .table-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray-400);
+        }
+        .table-empty svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.3; }
+        .table-empty p { font-size: 0.9rem; }
+
+        /* ── STUDENT DETAIL PANEL ── */
+        .detail-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15,23,42,0.5);
+            z-index: 300;
+            display: none;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 20px;
+        }
+        .detail-overlay.active { display: flex; }
+        .detail-panel {
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 640px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            animation: slideIn 0.25s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .detail-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            background: var(--white);
+            z-index: 10;
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        }
+        .detail-header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .detail-header-left .avatar {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .detail-header-left h3 { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+        .detail-header-left p { font-size: 0.8rem; color: var(--gray-400); }
+        .detail-close {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--gray-100);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+        .detail-close:hover { background: var(--gray-200); }
+        .detail-close svg { width: 18px; height: 18px; color: var(--gray-500); }
+
+        .detail-body { padding: 24px 28px; }
+
+        /* Detail Stats */
+        .detail-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .detail-stat {
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            padding: 16px;
+            text-align: center;
+        }
+        .detail-stat-value {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: var(--navy);
+        }
+        .detail-stat-label {
+            font-size: 0.75rem;
+            color: var(--gray-400);
+            margin-top: 4px;
+        }
+
+        /* Detail Progress */
+        .detail-progress-section { margin-bottom: 24px; }
+        .detail-progress-section h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 12px;
+        }
+        .detail-progress-bar {
+            height: 10px;
+            background: var(--gray-200);
+            border-radius: 100px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .detail-progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--teal), var(--teal-light));
+            border-radius: 100px;
+            transition: width 0.6s ease;
+        }
+        .detail-progress-text {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Detail Calendar */
+        .detail-calendar {
+            margin-bottom: 24px;
+        }
+        .detail-calendar h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 12px;
+        }
+        .mini-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            text-align: center;
+        }
+        .mini-cal-header {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+            font-weight: 600;
+            padding: 6px 0;
+        }
+        .mini-cal-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--gray-500);
+        }
+        .mini-cal-day.other { color: var(--gray-300); }
+        .mini-cal-day.checked {
+            background: var(--teal-bg);
+            color: var(--teal);
+            font-weight: 700;
+        }
+        .mini-cal-day.today {
+            border: 2px solid var(--teal);
+        }
+
+        /* Detail Records */
+        .detail-records h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 12px;
+        }
+        .record-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .record-item:last-child { border-bottom: none; }
+        .record-date {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-500);
+            white-space: nowrap;
+            min-width: 80px;
+            text-align: center;
+        }
+        .record-info { flex: 1; }
+        .record-title { font-size: 0.88rem; font-weight: 600; color: var(--navy); }
+        .record-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 4px;
+            font-size: 0.78rem;
+            color: var(--gray-400);
+        }
+        .record-meta span { display: flex; align-items: center; gap: 3px; }
+        .record-mood {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        .record-note {
+            font-size: 0.82rem;
+            color: var(--gray-500);
+            margin-top: 6px;
+            padding: 8px 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            font-style: italic;
+        }
+
+        /* ── MANAGE PAGE ── */
+        .manage-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .manage-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+        }
+        .manage-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 6px;
+        }
+        .manage-card p {
+            font-size: 0.82rem;
+            color: var(--gray-400);
+            margin-bottom: 20px;
+        }
+        .manage-form .form-group { margin-bottom: 16px; }
+        .manage-form .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .manage-hint {
+            background: var(--info-bg);
+            border: 1px solid #bfdbfe;
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-top: 20px;
+        }
+        .manage-hint h4 {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--info);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .manage-hint p {
+            font-size: 0.82rem;
+            color: var(--gray-600);
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+        .manage-hint code {
+            background: rgba(59,130,246,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--info);
+        }
+
+        /* ── TOAST ── */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 14px 20px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            animation: toastIn 0.3s ease;
+            min-width: 280px;
+            border-left: 4px solid var(--gray-300);
+        }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.info { border-left-color: var(--info); }
+        .toast svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .toast.success svg { color: var(--success); }
+        .toast.error svg { color: var(--danger); }
+        .toast.info svg { color: var(--info); }
+        @keyframes toastIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* ── LOADING ── */
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--teal);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── PAGE SECTIONS ── */
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+
+        /* ── MOBILE SIDEBAR TOGGLE ── */
+        .mobile-menu-btn {
+            display: none;
+            width: 40px; height: 40px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+        .mobile-menu-btn:hover { background: var(--gray-100); }
+        .mobile-menu-btn svg { width: 24px; height: 24px; color: var(--gray-600); }
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 199;
+        }
+        .sidebar-backdrop.active { display: block; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1024px) {
+            .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+            .manage-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .mobile-menu-btn { display: flex; }
+            .admin-sidebar { transform: translateX(-100%); }
+            .admin-sidebar.open { transform: translateX(0); }
+            .admin-main { margin-left: 0; }
+            .admin-content { padding: 20px 16px; }
+            .admin-topbar { padding: 0 16px; }
+            .dashboard-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .dash-card { padding: 16px; }
+            .dash-card-value { font-size: 1.4rem; }
+            .data-table-wrapper { overflow-x: auto; }
+            .data-table { min-width: 700px; }
+            .detail-panel { max-width: 100%; }
+            .detail-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .detail-body { padding: 20px; }
+            .detail-header { padding: 20px; }
+            .table-toolbar { flex-direction: column; align-items: stretch; }
+            .table-search { max-width: 100%; }
+        }
+        @media (max-width: 480px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .detail-stats { grid-template-columns: 1fr 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ── LOGIN PAGE ── -->
+<div class="login-page" id="loginPage">
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>
+            </div>
+            <h1>一数打卡系统</h1>
+            <p>管理端 - 教师登录</p>
+        </div>
+        <div class="login-error" id="loginError">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span id="loginErrorText"></span>
+        </div>
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="text" class="form-input" id="loginUsername" placeholder="请输入管理员用户名" autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label>密码</label>
+            <input type="password" class="form-input" id="loginPassword" placeholder="请输入密码" autocomplete="current-password">
+        </div>
+        <button class="login-btn" id="loginBtn" onclick="handleLogin()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:inline;vertical-align:middle;margin-right:6px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            登录管理端
+        </button>
+    </div>
+</div>
+
+<!-- ── ADMIN APP ── -->
+<div class="admin-app" id="adminApp">
+    <!-- Sidebar Backdrop (mobile) -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <h2>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>
+                一数打卡管理
+            </h2>
+            <span class="admin-badge">ADMIN</span>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">数据管理</div>
+            <button class="sidebar-link active" data-page="dashboard" onclick="switchPage('dashboard')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                数据概览
+            </button>
+            <button class="sidebar-link" data-page="students" onclick="switchPage('students')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                学生列表
+            </button>
+            <div class="nav-section-label">系统管理</div>
+            <button class="sidebar-link" data-page="manage" onclick="switchPage('manage')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                批量管理
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="sidebar-link" onclick="handleLogout()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                退出登录
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+        <!-- Top Bar -->
+        <header class="admin-topbar">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <span class="topbar-title" id="topbarTitle">数据概览</span>
+            </div>
+            <div class="topbar-actions">
+                <div class="topbar-user">
+                    <div class="topbar-avatar" id="topbarAvatar">A</div>
+                    <span id="topbarName">管理员</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            <!-- ── DASHBOARD PAGE ── -->
+            <div class="page-section active" id="page-dashboard">
+                <div class="dashboard-grid" id="dashGrid">
+                    <div class="dash-card">
+                        <div class="dash-card-icon teal">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <div class="dash-card-info">
+                            <div class="dash-card-value" id="dashTotalStudents">--</div>
+                            <div class="dash-card-label">总学生数</div>
+                        </div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="dash-card-icon green">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dash-card-info">
+                            <div class="dash-card-value" id="dashTodayCheckins">--</div>
+                            <div class="dash-card-label">今日打卡人数</div>
+                        </div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="dash-card-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        </div>
+                        <div class="dash-card-info">
+                            <div class="dash-card-value" id="dashWeekRate">--</div>
+                            <div class="dash-card-label">本周打卡率</div>
+                        </div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="dash-card-icon amber">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+                        </div>
+                        <div class="dash-card-info">
+                            <div class="dash-card-value" id="dashAvgProgress">--</div>
+                            <div class="dash-card-label">平均完成进度</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dash-section">
+                    <div class="dash-section-header">
+                        <span class="dash-section-title">最近打卡动态</span>
+                    </div>
+                    <div class="activity-list" id="recentActivity">
+                        <div class="loading-spinner"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── STUDENTS PAGE ── -->
+            <div class="page-section" id="page-students">
+                <div class="table-toolbar">
+                    <div class="table-search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="studentSearch" placeholder="搜索学生姓名或用户名..." oninput="filterStudents()">
+                    </div>
+                    <div class="table-filters">
+                        <button class="filter-btn" onclick="sortStudents('progress')" id="sortProgress">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                            按进度排序
+                        </button>
+                        <button class="filter-btn" onclick="sortStudents('days')" id="sortDays">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                            按打卡天数
+                        </button>
+                    </div>
+                </div>
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>学生</th>
+                                <th>年级</th>
+                                <th>打卡天数</th>
+                                <th>已完成课程</th>
+                                <th>学习时长</th>
+                                <th>最后打卡</th>
+                                <th>完成进度</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTableBody">
+                            <tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── MANAGE PAGE ── -->
+            <div class="page-section" id="page-manage">
+                <div class="manage-grid">
+                    <div class="manage-card">
+                        <h3>添加学生账号</h3>
+                        <p>手动创建新的学生账号，创建后学生可使用用户名和密码登录主应用。</p>
+                        <div class="manage-form">
+                            <div class="form-group">
+                                <label>用户名</label>
+                                <input type="text" class="form-input" id="addUsername" placeholder="例如: zhangsan">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>显示名称</label>
+                                    <input type="text" class="form-input" id="addDisplayName" placeholder="例如: 张三">
+                                </div>
+                                <div class="form-group">
+                                    <label>年级</label>
+                                    <select class="form-input" id="addGrade">
+                                        <option value="">请选择</option>
+                                        <option value="初一">初一</option>
+                                        <option value="初二">初二</option>
+                                        <option value="初三">初三</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>初始密码</label>
+                                <input type="text" class="form-input" id="addPassword" placeholder="默认: 123456" value="123456">
+                            </div>
+                            <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;" onclick="addStudent()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                创建学生账号
+                            </button>
+                        </div>
+                    </div>
+                    <div class="manage-card">
+                        <h3>管理说明</h3>
+                        <p>关于学生账号管理和密码重置的操作指引。</p>
+                        <div class="manage-hint">
+                            <h4>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                密码重置说明
+                            </h4>
+                            <p>学生密码重置需要通过 Supabase Dashboard 操作：</p>
+                            <p style="margin-top:8px;">1. 登录 <code>Supabase Dashboard</code></p>
+                            <p>2. 进入 <code>Authentication > Users</code></p>
+                            <p>3. 找到目标用户，点击 <code>...</code> 菜单</p>
+                            <p>4. 选择 <code>Send password reset email</code> 或手动修改密码</p>
+                        </div>
+                        <div class="manage-hint" style="margin-top:16px;">
+                            <h4>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                安全提示
+                            </h4>
+                            <p>建议定期检查学生账号状态，及时清理已毕业或不再使用的学生数据。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── STUDENT DETAIL PANEL ── -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetailIfBackdrop(event)">
+    <div class="detail-panel" id="detailPanel">
+        <div class="detail-header">
+            <div class="detail-header-left">
+                <div class="avatar" id="detailAvatar">S</div>
+                <div>
+                    <h3 id="detailName">学生姓名</h3>
+                    <p id="detailMeta">初一 | 加入于 2024-01-01</p>
+                </div>
+            </div>
+            <button class="detail-close" onclick="closeDetail()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="detail-body">
+            <div class="detail-stats">
+                <div class="detail-stat">
+                    <div class="detail-stat-value" id="detailDays">0</div>
+                    <div class="detail-stat-label">打卡天数</div>
+                </div>
+                <div class="detail-stat">
+                    <div class="detail-stat-value" id="detailLessons">0</div>
+                    <div class="detail-stat-label">已完成课程</div>
+                </div>
+                <div class="detail-stat">
+                    <div class="detail-stat-value" id="detailMinutes">0</div>
+                    <div class="detail-stat-label">学习时长(分)</div>
+                </div>
+            </div>
+
+            <div class="detail-progress-section">
+                <h4>学习进度</h4>
+                <div class="detail-progress-bar">
+                    <div class="fill" id="detailProgressFill" style="width:0%"></div>
+                </div>
+                <div class="detail-progress-text">
+                    <span id="detailProgressLabel">已完成 0 / 45 天</span>
+                    <span id="detailProgressPercent">0%</span>
+                </div>
+            </div>
+
+            <div class="detail-calendar">
+                <h4 id="detailCalTitle">打卡日历 - 2024年1月</h4>
+                <div class="mini-calendar-grid" id="detailCalendar"></div>
+            </div>
+
+            <div class="detail-records">
+                <h4>打卡记录</h4>
+                <div id="detailRecords">
+                    <div class="loading-spinner"><div class="spinner"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Supabase Init ──
+const SUPABASE_URL = window.__SUPABASE_CONFIG__?.url || 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG__?.key || 'YOUR_SUPABASE_ANON_KEY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── State ──
+let currentAdmin = null;
+let allStudents = [];
+let currentSort = { field: null, asc: false };
+const TOTAL_PLAN_DAYS = 45;
+
+// ── Toast ──
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const icons = {
+        success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+        error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+    };
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; toast.style.transition = 'all 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
+// ── Login ──
+async function handleLogin() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errorEl = document.getElementById('loginError');
+    const errorText = document.getElementById('loginErrorText');
+    const btn = document.getElementById('loginBtn');
+
+    errorEl.classList.remove('show');
+    if (!username || !password) { errorText.textContent = '请输入用户名和密码'; errorEl.classList.add('show'); return; }
+
+    btn.disabled = true;
+    btn.textContent = '登录中...';
+
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email: username.includes('@') ? username : `${username}@example.com`, password });
+        if (error) throw error;
+
+        // Check admin role
+        const { data: profile, error: profileError } = await supabase.from('profiles').select('role, display_name, avatar_color').eq('id', data.user.id).single();
+        if (profileError) throw profileError;
+        if (profile.role !== 'admin') {
+            await supabase.auth.signOut();
+            throw new Error('权限不足：仅限管理员登录');
+        }
+
+        currentAdmin = { id: data.user.id, name: profile.display_name || '管理员', color: profile.avatar_color || '#0d9488' };
+        showAdminApp();
+    } catch (err) {
+        errorText.textContent = err.message || '登录失败，请检查用户名和密码';
+        errorEl.classList.add('show');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:inline;vertical-align:middle;margin-right:6px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>登录管理端';
+    }
+}
+
+// Enter key login
+document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('loginUsername').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPassword').focus(); });
+
+function showAdminApp() {
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('adminApp').classList.add('active');
+    document.getElementById('topbarAvatar').textContent = (currentAdmin.name || 'A')[0];
+    document.getElementById('topbarAvatar').style.background = `linear-gradient(135deg, ${currentAdmin.color || '#0d9488'}, ${currentAdmin.color || '#14b8a6'})`;
+    document.getElementById('topbarName').textContent = currentAdmin.name;
+    loadDashboard();
+    loadStudents();
+}
+
+async function handleLogout() {
+    await supabase.auth.signOut();
+    currentAdmin = null;
+    document.getElementById('adminApp').classList.remove('active');
+    document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
+}
+
+// ── Navigation ──
+function switchPage(page) {
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    document.getElementById(`page-${page}`).classList.add('active');
+    document.querySelectorAll('.sidebar-link[data-page]').forEach(l => l.classList.remove('active'));
+    document.querySelector(`.sidebar-link[data-page="${page}"]`).classList.add('active');
+    const titles = { dashboard: '数据概览', students: '学生列表', manage: '批量管理' };
+    document.getElementById('topbarTitle').textContent = titles[page] || '';
+    // Close sidebar on mobile
+    document.getElementById('adminSidebar').classList.remove('open');
+    document.getElementById('sidebarBackdrop').classList.remove('active');
+    // Refresh data
+    if (page === 'dashboard') loadDashboard();
+    if (page === 'students') loadStudents();
+}
+
+function toggleSidebar() {
+    document.getElementById('adminSidebar').classList.toggle('open');
+    document.getElementById('sidebarBackdrop').classList.toggle('active');
+}
+
+// ── Dashboard ──
+async function loadDashboard() {
+    try {
+        // Load student stats
+        const { data: stats, error } = await supabase.from('student_stats').select('*');
+        if (error) throw error;
+
+        const totalStudents = stats ? stats.length : 0;
+        document.getElementById('dashTotalStudents').textContent = totalStudents;
+
+        // Today checkins
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayISO = today.toISOString();
+        const { data: todayCheckins } = await supabase.from('checkins').select('user_id', { distinct: true }).gte('checked_in_at', todayISO);
+        document.getElementById('dashTodayCheckins').textContent = todayCheckins ? todayCheckins.length : 0;
+
+        // Week rate
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        const { data: weekCheckins } = await supabase.from('checkins').select('user_id', { distinct: true }).gte('checked_in_at', weekAgo.toISOString());
+        const weekRate = totalStudents > 0 ? Math.round(((weekCheckins ? weekCheckins.length : 0) / totalStudents) * 100) : 0;
+        document.getElementById('dashWeekRate').textContent = weekRate + '%';
+
+        // Avg progress
+        const avgProgress = totalStudents > 0 ? Math.round(stats.reduce((sum, s) => sum + Math.min(100, Math.round((s.total_checkin_days || 0) / TOTAL_PLAN_DAYS * 100)), 0) / totalStudents) : 0;
+        document.getElementById('dashAvgProgress').textContent = avgProgress + '%';
+
+        // Recent activity
+        const { data: recent } = await supabase.from('checkins').select('*, profiles(username, display_name, avatar_color)').order('checked_in_at', { ascending: false }).limit(10);
+        const activityEl = document.getElementById('recentActivity');
+        if (recent && recent.length > 0) {
+            activityEl.innerHTML = recent.map(r => {
+                const p = r.profiles || {};
+                const initial = (p.display_name || p.username || '?')[0];
+                const color = p.avatar_color || '#0d9488';
+                const time = formatTimeAgo(r.checked_in_at);
+                return `<div class="activity-item">
+                    <div class="activity-avatar" style="background:${color}">${initial}</div>
+                    <div class="activity-info">
+                        <div class="activity-name">${p.display_name || p.username || '未知'}</div>
+                        <div class="activity-desc">${r.plan_title || `第${r.plan_day}天`} · ${r.duration || 0}分钟${r.mood ? ' · ' + r.mood : ''}</div>
+                    </div>
+                    <div class="activity-time">${time}</div>
+                </div>`;
+            }).join('');
+        } else {
+            activityEl.innerHTML = '<div class="table-empty"><p>暂无打卡记录</p></div>';
+        }
+    } catch (err) {
+        console.error('Dashboard load error:', err);
+        showToast('加载仪表盘数据失败', 'error');
+    }
+}
+
+function formatTimeAgo(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return '刚刚';
+    if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+    if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+    if (diff < 604800) return Math.floor(diff / 86400) + '天前';
+    return d.toLocaleDateString('zh-CN');
+}
+
+// ── Students ──
+async function loadStudents() {
+    try {
+        const { data: stats, error } = await supabase.from('student_stats').select('*').order('total_checkin_days', { ascending: false });
+        if (error) throw error;
+        allStudents = stats || [];
+        renderStudents(allStudents);
+    } catch (err) {
+        console.error('Students load error:', err);
+        showToast('加载学生列表失败', 'error');
+    }
+}
+
+function renderStudents(students) {
+    const tbody = document.getElementById('studentTableBody');
+    if (!students || students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7"><div class="table-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>暂无学生数据</p></div></td></tr>';
+        return;
+    }
+    tbody.innerHTML = students.map(s => {
+        const progress = Math.min(100, Math.round((s.total_checkin_days || 0) / TOTAL_PLAN_DAYS * 100));
+        const initial = (s.display_name || s.username || '?')[0];
+        const color = getAvatarColor(s.username);
+        const lastCheckin = s.last_checkin_at ? formatTimeAgo(s.last_checkin_at) : '从未打卡';
+        const minutes = s.total_minutes || 0;
+        const durationStr = minutes >= 60 ? `${Math.floor(minutes / 60)}h${minutes % 60}m` : `${minutes}m`;
+        return `<tr onclick="openDetail('${s.user_id}')">
+            <td>
+                <div class="student-cell">
+                    <div class="avatar" style="background:${color}">${initial}</div>
+                    <div>
+                        <div class="name">${s.display_name || s.username || '--'}</div>
+                        <div class="username">@${s.username || '--'}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="grade-badge">${s.grade || '--'}</span></td>
+            <td style="font-weight:600">${s.total_checkin_days || 0} 天</td>
+            <td>${s.completed_lessons || 0} 节</td>
+            <td>${durationStr}</td>
+            <td style="font-size:0.82rem;color:var(--gray-400)">${lastCheckin}</td>
+            <td>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <div class="progress-bar-mini"><div class="fill" style="width:${progress}%"></div></div>
+                    <span class="progress-text">${progress}%</span>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function getAvatarColor(username) {
+    const colors = ['#0d9488', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16'];
+    if (!username) return colors[0];
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+}
+
+function filterStudents() {
+    const q = document.getElementById('studentSearch').value.trim().toLowerCase();
+    if (!q) { renderStudents(allStudents); return; }
+    const filtered = allStudents.filter(s =>
+        (s.display_name || '').toLowerCase().includes(q) ||
+        (s.username || '').toLowerCase().includes(q)
+    );
+    renderStudents(filtered);
+}
+
+function sortStudents(field) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    if (currentSort.field === field) {
+        currentSort.asc = !currentSort.asc;
+    } else {
+        currentSort.field = field;
+        currentSort.asc = false;
+    }
+    document.getElementById(field === 'progress' ? 'sortProgress' : 'sortDays').classList.add('active');
+
+    const sorted = [...allStudents].sort((a, b) => {
+        let va, vb;
+        if (field === 'progress') {
+            va = a.total_checkin_days || 0;
+            vb = b.total_checkin_days || 0;
+        } else {
+            va = a.total_checkin_days || 0;
+            vb = b.total_checkin_days || 0;
+        }
+        return currentSort.asc ? va - vb : vb - va;
+    });
+    renderStudents(sorted);
+}
+
+// ── Student Detail ──
+async function openDetail(userId) {
+    const overlay = document.getElementById('detailOverlay');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    try {
+        // Load student stats
+        const { data: stat } = await supabase.from('student_stats').select('*').eq('user_id', userId).single();
+        if (!stat) { showToast('未找到该学生数据', 'error'); closeDetail(); return; }
+
+        const initial = (stat.display_name || stat.username || '?')[0];
+        const color = getAvatarColor(stat.username);
+        const progress = Math.min(100, Math.round((stat.total_checkin_days || 0) / TOTAL_PLAN_DAYS * 100));
+
+        document.getElementById('detailAvatar').textContent = initial;
+        document.getElementById('detailAvatar').style.background = `linear-gradient(135deg, ${color}, ${color})`;
+        document.getElementById('detailName').textContent = stat.display_name || stat.username;
+        document.getElementById('detailMeta').textContent = `${stat.grade || '--'} | 加入于 ${formatDate(stat.joined_at)}`;
+        document.getElementById('detailDays').textContent = stat.total_checkin_days || 0;
+        document.getElementById('detailLessons').textContent = stat.completed_lessons || 0;
+        document.getElementById('detailMinutes').textContent = stat.total_minutes || 0;
+        document.getElementById('detailProgressFill').style.width = progress + '%';
+        document.getElementById('detailProgressLabel').textContent = `已完成 ${stat.total_checkin_days || 0} / ${TOTAL_PLAN_DAYS} 天`;
+        document.getElementById('detailProgressPercent').textContent = progress + '%';
+
+        // Load checkin records
+        const { data: checkins } = await supabase.from('checkins').select('*').eq('user_id', userId).order('checked_in_at', { ascending: false });
+        renderDetailCalendar(checkins || []);
+        renderDetailRecords(checkins || []);
+    } catch (err) {
+        console.error('Detail load error:', err);
+        showToast('加载学生详情失败', 'error');
+    }
+}
+
+function renderDetailCalendar(checkins) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    document.getElementById('detailCalTitle').textContent = `打卡日历 - ${year}年${month + 1}月`;
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startWeekday = firstDay.getDay();
+    const daysInMonth = lastDay.getDate();
+
+    const checkedDates = new Set();
+    checkins.forEach(c => {
+        const d = new Date(c.checked_in_at);
+        if (d.getFullYear() === year && d.getMonth() === month) {
+            checkedDates.add(d.getDate());
+        }
+    });
+
+    const todayDate = now.getDate();
+    const headers = ['日', '一', '二', '三', '四', '五', '六'];
+    let html = headers.map(h => `<div class="mini-cal-header">${h}</div>`).join('');
+
+    // Previous month padding
+    const prevMonth = new Date(year, month, 0);
+    for (let i = startWeekday - 1; i >= 0; i--) {
+        html += `<div class="mini-cal-day other">${prevMonth.getDate() - i}</div>`;
+    }
+
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+        let cls = 'mini-cal-day';
+        if (checkedDates.has(d)) cls += ' checked';
+        if (d === todayDate) cls += ' today';
+        html += `<div class="${cls}">${d}</div>`;
+    }
+
+    // Next month padding
+    const totalCells = startWeekday + daysInMonth;
+    const remaining = (7 - (totalCells % 7)) % 7;
+    for (let i = 1; i <= remaining; i++) {
+        html += `<div class="mini-cal-day other">${i}</div>`;
+    }
+
+    document.getElementById('detailCalendar').innerHTML = html;
+}
+
+function renderDetailRecords(checkins) {
+    const el = document.getElementById('detailRecords');
+    if (!checkins || checkins.length === 0) {
+        el.innerHTML = '<div class="table-empty" style="padding:30px"><p>暂无打卡记录</p></div>';
+        return;
+    }
+    const moodMap = { 'great': '😄', 'good': '🙂', 'okay': '😐', 'bad': '😔', 'tired': '😴' };
+    el.innerHTML = checkins.map(c => {
+        const date = formatDate(c.checked_in_at);
+        const mood = c.mood ? (moodMap[c.mood] || c.mood) : '';
+        return `<div class="record-item">
+            <div class="record-date">${date}</div>
+            <div class="record-info">
+                <div class="record-title">${c.plan_title || `第${c.plan_day}天学习`}</div>
+                <div class="record-meta">
+                    <span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        ${c.duration || 0}分钟
+                    </span>
+                    ${c.plan_phase ? `<span>${c.plan_phase}</span>` : ''}
+                    ${mood ? `<span class="record-mood">${mood}</span>` : ''}
+                </div>
+                ${c.note ? `<div class="record-note">${escapeHtml(c.note)}</div>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '--';
+    const d = new Date(dateStr);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function closeDetail() {
+    document.getElementById('detailOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function closeDetailIfBackdrop(e) {
+    if (e.target === document.getElementById('detailOverlay')) closeDetail();
+}
+
+// ── Add Student ──
+async function addStudent() {
+    const username = document.getElementById('addUsername').value.trim();
+    const displayName = document.getElementById('addDisplayName').value.trim();
+    const grade = document.getElementById('addGrade').value;
+    const password = document.getElementById('addPassword').value;
+
+    if (!username || !displayName) { showToast('请填写用户名和显示名称', 'error'); return; }
+    if (!grade) { showToast('请选择年级', 'error'); return; }
+    if (!password || password.length < 6) { showToast('密码至少6位', 'error'); return; }
+
+    try {
+        // Sign up via Supabase Auth
+        const email = `${username}@yishu.app`;
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+
+        if (data.user) {
+            // Create profile
+            const { error: profileError } = await supabase.from('profiles').upsert({
+                id: data.user.id,
+                username: username,
+                display_name: displayName,
+                role: 'student',
+                grade: grade,
+                avatar_color: getAvatarColor(username),
+                updated_at: new Date().toISOString()
+            });
+            if (profileError) throw profileError;
+
+            // Re-login as admin (signUp changes current session)
+            const adminUsername = document.getElementById('loginUsername').value.trim();
+            const adminPassword = document.getElementById('loginPassword').value;
+            if (adminUsername && adminPassword) {
+                await supabase.auth.signInWithPassword({
+                    email: adminUsername.includes('@') ? adminUsername : `${adminUsername}@example.com`,
+                    password: adminPassword
+                });
+            }
+
+            showToast(`学生 "${displayName}" 创建成功`, 'success');
+            document.getElementById('addUsername').value = '';
+            document.getElementById('addDisplayName').value = '';
+            document.getElementById('addGrade').value = '';
+            document.getElementById('addPassword').value = '123456';
+            loadStudents();
+            loadDashboard();
+        }
+    } catch (err) {
+        console.error('Add student error:', err);
+        showToast(`创建失败: ${err.message}`, 'error');
+    }
+}
+
+// ── Session Check ──
+async function checkSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+        try {
+            const { data: profile } = await supabase.from('profiles').select('role, display_name, avatar_color').eq('id', session.user.id).single();
+            if (profile && profile.role === 'admin') {
+                currentAdmin = { id: session.user.id, name: profile.display_name || '管理员', color: profile.avatar_color || '#0d9488' };
+                showAdminApp();
+                return;
+            }
+        } catch (e) { /* ignore */ }
+    }
+    document.getElementById('loginPage').style.display = 'flex';
+}
+
+// Init
+checkSession();
+</script>
+</body>
+</html>

@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>一数打卡</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0f172a;
+            --navy-light: #1e293b;
+            --teal: #0d9488;
+            --teal-light: #14b8a6;
+            --teal-bg: #f0fdfa;
+            --warm: #f59e0b;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --white: #ffffff;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-800: #1e293b;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius: 16px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html { font-size: 16px; }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-800);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overscroll-behavior-y: none;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* App Container */
+        #app {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            max-width: 430px;
+            margin: 0 auto;
+            background: var(--white);
+            position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.08);
+        }
+
+        /* Header */
+        .app-header {
+            padding: calc(12px + var(--safe-top)) 20px 12px;
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-100);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        /* Main Content */
+        .app-main {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: calc(80px + var(--safe-bottom));
+        }
+        .app-main::-webkit-scrollbar { display: none; }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-top: 1px solid var(--gray-100);
+            padding-bottom: var(--safe-bottom);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: calc(64px + var(--safe-bottom));
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 16px;
+            color: var(--gray-400);
+            text-decoration: none;
+            font-size: 0.65rem;
+            font-weight: 500;
+            transition: color 0.2s;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+        .nav-item.active { color: var(--teal); }
+        .nav-item svg { width: 24px; height: 24px; }
+
+        /* Page Sections */
+        .page { display: none; padding: 16px 20px; }
+        .page.active { display: block; }
+
+        /* ── HOME PAGE ── */
+        .home-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .avatar {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 1.1rem;
+        }
+        .user-meta h2 { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+        .user-meta p { font-size: 0.8rem; color: var(--gray-400); margin-top: 2px; }
+        .streak-badge {
+            display: flex; align-items: center; gap: 6px;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            padding: 8px 14px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #92400e;
+        }
+        .streak-badge .fire { font-size: 1.1rem; }
+
+        /* Progress Card */
+        .progress-card {
+            background: linear-gradient(135deg, var(--navy), var(--navy-light));
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            color: white;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-card::before {
+            content: ''; position: absolute;
+            top: -50%; right: -20%;
+            width: 200px; height: 200px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+        }
+        .progress-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .progress-title { font-size: 0.9rem; opacity: 0.7; }
+        .progress-days {
+            font-size: 2.5rem; font-weight: 900;
+            line-height: 1;
+        }
+        .progress-days span { font-size: 1rem; font-weight: 400; opacity: 0.6; }
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 100px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--teal-light), var(--teal));
+            border-radius: 100px;
+            transition: width 0.6s ease;
+        }
+        .progress-stats {
+            display: flex; justify-content: space-between;
+            font-size: 0.8rem; opacity: 0.6;
+        }
+
+        /* Today's Task */
+        .section-title {
+            font-size: 1.1rem; font-weight: 700;
+            color: var(--navy); margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .task-card {
+            background: var(--white);
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+        .task-card:active { transform: scale(0.98); }
+        .task-card.completed {
+            border-color: var(--success);
+            background: #f0fdf4;
+        }
+        .task-header {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 12px;
+        }
+        .task-check {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 2.5px solid var(--gray-300);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .task-card.completed .task-check {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        .task-check svg { width: 16px; height: 16px; color: white; opacity: 0; }
+        .task-card.completed .task-check svg { opacity: 1; }
+        .task-title { font-size: 1rem; font-weight: 600; color: var(--navy); }
+        .task-card.completed .task-title { text-decoration: line-through; opacity: 0.6; }
+        .task-meta {
+            display: flex; gap: 12px;
+            font-size: 0.8rem; color: var(--gray-400);
+            margin-left: 40px;
+        }
+        .task-meta span { display: flex; align-items: center; gap: 4px; }
+
+        /* Check-in Button */
+        .checkin-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(13,148,136,0.25);
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .checkin-btn:active { transform: scale(0.97); }
+        .checkin-btn:disabled {
+            background: var(--gray-300);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* ── STATS PAGE ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: 20px 16px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8rem; font-weight: 900;
+            color: var(--navy); line-height: 1;
+            margin-bottom: 6px;
+        }
+        .stat-label { font-size: 0.8rem; color: var(--gray-400); }
+
+        .calendar-section {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+        .calendar-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px;
+        }
+        .calendar-header h3 { font-size: 1rem; font-weight: 700; }
+        .calendar-nav {
+            display: flex; gap: 8px;
+        }
+        .calendar-nav button {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+            background: var(--white);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+        .calendar-day-header {
+            font-size: 0.7rem; color: var(--gray-400);
+            font-weight: 500;
+            padding: 8px 0;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--gray-600);
+            position: relative;
+        }
+        .calendar-day.other-month { color: var(--gray-300); }
+        .calendar-day.checked {
+            background: var(--teal-bg);
+            color: var(--teal);
+        }
+        .calendar-day.checked::after {
+            content: ''; position: absolute;
+            bottom: 4px; left: 50%; transform: translateX(-50%);
+            width: 4px; height: 4px;
+            background: var(--teal);
+            border-radius: 50%;
+        }
+        .calendar-day.today {
+            border: 2px solid var(--teal);
+            color: var(--teal);
+            font-weight: 700;
+        }
+
+        /* ── GROUP PAGE ── */
+        .group-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn-sm {
+            padding: 8px 16px;
+            background: var(--navy);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .leaderboard-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+        }
+        .rank-num {
+            width: 28px; text-align: center;
+            font-size: 0.9rem; font-weight: 700;
+            color: var(--gray-400);
+        }
+        .rank-num.top3 { color: var(--warm); }
+        .leaderboard-avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .leaderboard-info { flex: 1; }
+        .leaderboard-name { font-size: 0.95rem; font-weight: 600; }
+        .leaderboard-meta { font-size: 0.75rem; color: var(--gray-400); margin-top: 2px; }
+        .leaderboard-score {
+            font-size: 1.1rem; font-weight: 700;
+            color: var(--navy);
+        }
+
+        /* ── PROFILE PAGE ── */
+        .profile-header {
+            text-align: center;
+            padding: 24px 0;
+        }
+        .profile-avatar {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 900; font-size: 1.8rem;
+            margin: 0 auto 12px;
+        }
+        .profile-name { font-size: 1.2rem; font-weight: 700; }
+        .profile-grade { font-size: 0.85rem; color: var(--gray-400); margin-top: 4px; }
+
+        .settings-list {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        .settings-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .settings-item:last-child { border-bottom: none; }
+        .settings-label { font-size: 0.95rem; font-weight: 500; }
+        .settings-value {
+            display: flex; align-items: center; gap: 8px;
+            color: var(--gray-400); font-size: 0.9rem;
+        }
+
+        /* Toggle Switch */
+        .toggle {
+            width: 48px; height: 28px;
+            background: var(--gray-300);
+            border-radius: 100px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .toggle.active { background: var(--teal); }
+        .toggle::after {
+            content: ''; position: absolute;
+            top: 2px; left: 2px;
+            width: 24px; height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .toggle.active::after { transform: translateX(20px); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none; align-items: flex-end; justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-sheet {
+            background: var(--white);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            padding: 24px 20px calc(24px + var(--safe-bottom));
+            width: 100%; max-width: 430px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+        }
+        .modal-overlay.active .modal-sheet { transform: translateY(0); }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title { font-size: 1.2rem; font-weight: 700; }
+        .modal-close {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: none; background: var(--gray-100);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1.2rem;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; color: var(--gray-600); }
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus { outline: none; border-color: var(--teal); }
+        textarea.form-input { resize: none; min-height: 100px; }
+        .form-submit {
+            width: 100%;
+            padding: 16px;
+            background: var(--navy);
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in { animation: slideUp 0.4s ease-out; }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .pulse { animation: pulse 2s infinite; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <h1 id="page-title">今日学习</h1>
+        </header>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- HOME PAGE -->
+            <div class="page active" id="page-home">
+                <div class="home-header">
+                    <div class="user-info">
+                        <div class="avatar" id="user-avatar">数</div>
+                        <div class="user-meta">
+                            <h2 id="user-name">同学</h2>
+                            <p>初一 · 45天计划</p>
+                        </div>
+                    </div>
+                    <div class="streak-badge">
+                        <span class="fire">🔥</span>
+                        <span id="streak-count">0</span>天
+                    </div>
+                </div>
+
+                <div class="progress-card">
+                    <div class="progress-header">
+                        <div>
+                            <div class="progress-title">已完成</div>
+                            <div class="progress-days"><span id="completed-days">0</span><span> / 45天</span></div>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>总学习 <strong id="total-minutes">0</strong> 分钟</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                </div>
+
+                <div class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    今日任务
+                </div>
+
+                <div class="task-card" id="today-task">
+                    <div class="task-header">
+                        <div class="task-check" id="task-check">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="task-title" id="task-title">加载中...</div>
+                    </div>
+                    <div class="task-meta">
+                        <span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span id="task-duration">90分钟</span>
+                        </span>
+                        <span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <span id="task-phase">第一阶段</span>
+                        </span>
+                    </div>
+                </div>
+
+                <button class="checkin-btn" id="checkin-btn" onclick="openCheckinModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    完成今日学习打卡
+                </button>
+            </div>
+
+            <!-- STATS PAGE -->
+            <div class="page" id="page-stats">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-days">0</div>
+                        <div class="stat-label">打卡天数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-hours">0</div>
+                        <div class="stat-label">学习时长(小时)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-streak">0</div>
+                        <div class="stat-label">连续打卡</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-progress">0%</div>
+                        <div class="stat-label">计划进度</div>
+                    </div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <h3>打卡日历</h3>
+                        <div class="calendar-nav">
+                            <button onclick="changeMonth(-1)">‹</button>
+                            <button onclick="changeMonth(1)">›</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendar">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- GROUP PAGE -->
+            <div class="page" id="page-group">
+                <div class="group-header">
+                    <h2 style="font-size: 1.1rem; font-weight: 700;">学习小组</h2>
+                    <button class="btn-sm" onclick="showToast('功能开发中')">创建小组</button>
+                </div>
+                <div id="leaderboard">
+                    <div class="leaderboard-item">
+                        <div class="rank-num top3">1</div>
+                        <div class="leaderboard-avatar">张</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">张同学</div>
+                            <div class="leaderboard-meta">连续打卡 12 天</div>
+                        </div>
+                        <div class="leaderboard-score">12天</div>
+                    </div>
+                    <div class="leaderboard-item">
+                        <div class="rank-num top3">2</div>
+                        <div class="leaderboard-avatar">李</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">李同学</div>
+                            <div class="leaderboard-meta">连续打卡 10 天</div>
+                        </div>
+                        <div class="leaderboard-score">10天</div>
+                    </div>
+                    <div class="leaderboard-item">
+                        <div class="rank-num top3">3</div>
+                        <div class="leaderboard-avatar">王</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">王同学</div>
+                            <div class="leaderboard-meta">连续打卡 8 天</div>
+                        </div>
+                        <div class="leaderboard-score">8天</div>
+                    </div>
+                    <div class="leaderboard-item">
+                        <div class="rank-num">4</div>
+                        <div class="leaderboard-avatar">你</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">你</div>
+                            <div class="leaderboard-meta">连续打卡 <span id="your-streak">0</span> 天</div>
+                        </div>
+                        <div class="leaderboard-score" id="your-score">0天</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFILE PAGE -->
+            <div class="page" id="page-profile">
+                <div class="profile-header">
+                    <div class="profile-avatar" id="profile-avatar">数</div>
+                    <div class="profile-name" id="profile-name">同学</div>
+                    <div class="profile-grade">初一 · 目标45天学完初中数学</div>
+                </div>
+
+                <div class="settings-list">
+                    <div class="settings-item">
+                        <span class="settings-label">每日提醒</span>
+                        <div class="toggle active" id="reminder-toggle" onclick="toggleReminder()"></div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">提醒时间</span>
+                        <div class="settings-value">20:00 ›</div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">每日目标时长</span>
+                        <div class="settings-value">90分钟 ›</div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">年级</span>
+                        <div class="settings-value">初一 ›</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchPage('home')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                首页
+            </button>
+            <button class="nav-item" onclick="switchPage('stats')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                统计
+            </button>
+            <button class="nav-item" onclick="switchPage('group')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                小组
+            </button>
+            <button class="nav-item" onclick="switchPage('profile')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                我的
+            </button>
+        </nav>
+
+        <!-- Check-in Modal -->
+        <div class="modal-overlay" id="checkin-modal">
+            <div class="modal-sheet">
+                <div class="modal-header">
+                    <div class="modal-title">学习打卡</div>
+                    <button class="modal-close" onclick="closeCheckinModal()">×</button>
+                </div>
+                <form onsubmit="submitCheckin(event)">
+                    <div class="form-group">
+                        <label class="form-label">学习时长（分钟）</label>
+                        <input type="number" class="form-input" id="checkin-duration" value="90" min="1" max="300">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">学习心得</label>
+                        <textarea class="form-input" id="checkin-note" placeholder="今天学到了什么？有什么收获？"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">心情</label>
+                        <div style="display:flex; gap:12px;">
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                                <input type="radio" name="mood" value="good" checked> 😊 很好
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                                <input type="radio" name="mood" value="normal"> 😐 一般
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                                <input type="radio" name="mood" value="bad"> 😔 困难
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="form-submit">确认打卡</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── State ──
+        let currentPage = 'home';
+        let currentMonth = new Date();
+        let checkinDates = [];
+        let todayPlan = null;
+
+        // ── Mock Data ──
+        const mockPlans = [
+            { day: 1, title: '数与式的基本概念', phase: '基础速成', duration: 90, completed: false },
+            { day: 2, title: '整式运算与乘法公式', phase: '基础速成', duration: 90, completed: false },
+            { day: 3, title: '因式分解（基础方法）', phase: '基础速成', duration: 90, completed: false },
+        ];
+
+        // ── Page Switching ──
+        function switchPage(page) {
+            currentPage = page;
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${page}`).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            event.target.closest('.nav-item').classList.add('active');
+
+            const titles = { home: '今日学习', stats: '学习统计', group: '学习小组', profile: '个人中心' };
+            document.getElementById('page-title').textContent = titles[page];
+
+            if (page === 'stats') renderCalendar();
+        }
+
+        // ── Load Today's Plan ──
+        function loadTodayPlan() {
+            const today = new Date().getDate();
+            const plan = mockPlans[(today - 1) % mockPlans.length];
+            todayPlan = plan;
+
+            document.getElementById('task-title').textContent = plan.title;
+            document.getElementById('task-duration').textContent = plan.duration + '分钟';
+            document.getElementById('task-phase').textContent = plan.phase;
+        }
+
+        // ── Check-in Modal ──
+        function openCheckinModal() {
+            document.getElementById('checkin-modal').classList.add('active');
+        }
+        function closeCheckinModal() {
+            document.getElementById('checkin-modal').classList.remove('active');
+        }
+
+        function submitCheckin(e) {
+            e.preventDefault();
+            const duration = document.getElementById('checkin-duration').value;
+            const note = document.getElementById('checkin-note').value;
+            const mood = document.querySelector('input[name="mood"]:checked').value;
+
+            // Mark as completed
+            document.getElementById('today-task').classList.add('completed');
+            document.getElementById('checkin-btn').disabled = true;
+            document.getElementById('checkin-btn').innerHTML = '✅ 今日已打卡';
+
+            // Add to checkin dates
+            const today = new Date().toISOString().split('T')[0];
+            if (!checkinDates.includes(today)) {
+                checkinDates.push(today);
+            }
+
+            // Update stats
+            updateStats();
+            closeCheckinModal();
+            showToast('打卡成功！继续加油！');
+        }
+
+        // ── Stats ──
+        function updateStats() {
+            const completed = checkinDates.length;
+            const totalMinutes = completed * 90;
+            const progress = Math.round((completed / 45) * 100);
+
+            document.getElementById('completed-days').textContent = completed;
+            document.getElementById('total-minutes').textContent = totalMinutes;
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-percent').textContent = progress + '%';
+            document.getElementById('streak-count').textContent = completed;
+
+            document.getElementById('stat-days').textContent = completed;
+            document.getElementById('stat-hours').textContent = (totalMinutes / 60).toFixed(1);
+            document.getElementById('stat-streak').textContent = completed;
+            document.getElementById('stat-progress').textContent = progress + '%';
+
+            document.getElementById('your-streak').textContent = completed;
+            document.getElementById('your-score').textContent = completed + '天';
+        }
+
+        // ── Calendar ──
+        function renderCalendar() {
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = '';
+
+            const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+            dayNames.forEach(d => {
+                const el = document.createElement('div');
+                el.className = 'calendar-day-header';
+                el.textContent = d;
+                calendar.appendChild(el);
+            });
+
+            for (let i = 0; i < firstDay; i++) {
+                const el = document.createElement('div');
+                el.className = 'calendar-day other-month';
+                calendar.appendChild(el);
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const el = document.createElement('div');
+                el.className = 'calendar-day';
+                el.textContent = day;
+
+                if (dateStr === today) el.classList.add('today');
+                if (checkinDates.includes(dateStr)) el.classList.add('checked');
+
+                calendar.appendChild(el);
+            }
+        }
+
+        function changeMonth(delta) {
+            currentMonth.setMonth(currentMonth.getMonth() + delta);
+            renderCalendar();
+        }
+
+        // ── Toggle ──
+        function toggleReminder() {
+            const toggle = document.getElementById('reminder-toggle');
+            toggle.classList.toggle('active');
+            showToast(toggle.classList.contains('active') ? '提醒已开启' : '提醒已关闭');
+        }
+
+        // ── Toast ──
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.8); color: white;
+                padding: 12px 24px; border-radius: 100px;
+                font-size: 0.9rem; z-index: 2000;
+                animation: fadeIn 0.2s;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // ── Init ──
+        loadTodayPlan();
+        updateStats();
+    </script>
+</body>
+</html>
