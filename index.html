@@ -736,6 +736,204 @@
             color: var(--teal);
             font-weight: 600;
         }
+
+        /* Plan Selector Modal */
+        .plan-selector-body {
+            max-height: 60vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .plan-selector-body::-webkit-scrollbar { display: none; }
+        .plan-phase-group {
+            margin-bottom: 16px;
+        }
+        .plan-phase-header {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 8px;
+            padding: 0 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .plan-phase-header::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: var(--teal);
+            border-radius: 2px;
+        }
+        .plan-day-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: var(--white);
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .plan-day-item:active { transform: scale(0.98); }
+        .plan-day-item:hover { border-color: var(--teal); }
+        .plan-day-item.current-day {
+            border-color: var(--teal);
+            background: var(--teal-bg);
+        }
+        .plan-day-item.completed-day {
+            border-color: var(--success);
+            background: #f0fdf4;
+        }
+        .plan-day-item.completed-day .plan-day-num {
+            background: var(--success);
+            color: white;
+        }
+        .plan-day-item.current-day .plan-day-num {
+            background: var(--teal);
+            color: white;
+        }
+        .plan-day-num {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: var(--gray-100);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; font-weight: 700;
+            color: var(--gray-500);
+            flex-shrink: 0;
+        }
+        .plan-day-info { flex: 1; }
+        .plan-day-title { font-size: 0.9rem; font-weight: 600; color: var(--navy); }
+        .plan-day-item.completed-day .plan-day-title { opacity: 0.6; text-decoration: line-through; }
+        .plan-day-meta { font-size: 0.75rem; color: var(--gray-400); margin-top: 2px; }
+        .plan-day-check {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: var(--success);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .plan-day-check svg { width: 14px; height: 14px; color: white; }
+
+        /* Task card clickable hint */
+        .task-card.clickable {
+            cursor: pointer;
+            position: relative;
+        }
+        .task-card.clickable::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 16px;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            border-top: 2px solid var(--gray-300);
+            border-right: 2px solid var(--gray-300);
+            transform: translateY(-50%) rotate(45deg);
+        }
+
+        /* Group page enhanced styles */
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .leaderboard-item:active { transform: scale(0.98); }
+        .leaderboard-progress-wrap {
+            flex: 1;
+            min-width: 0;
+        }
+        .leaderboard-progress-bar {
+            height: 6px;
+            background: var(--gray-100);
+            border-radius: 100px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        .leaderboard-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--teal-light), var(--teal));
+            border-radius: 100px;
+            transition: width 0.6s ease;
+        }
+        .leaderboard-progress-text {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+            margin-top: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .member-detail-list {
+            max-height: 50vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .member-detail-list::-webkit-scrollbar { display: none; }
+        .member-checkin-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .member-checkin-item:last-child { border-bottom: none; }
+        .member-checkin-day {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: var(--teal-bg);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 700;
+            color: var(--teal);
+            flex-shrink: 0;
+        }
+        .member-checkin-info { flex: 1; }
+        .member-checkin-title { font-size: 0.9rem; font-weight: 600; color: var(--navy); }
+        .member-checkin-meta { font-size: 0.75rem; color: var(--gray-400); margin-top: 2px; }
+        .member-checkin-duration {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--teal);
+            flex-shrink: 0;
+        }
+        .member-modal-avatar {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 1.3rem;
+            margin: 0 auto 8px;
+        }
+        .member-modal-name {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .member-modal-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin: 16px 0;
+            text-align: center;
+        }
+        .member-modal-stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .member-modal-stat-label {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -841,7 +1039,7 @@
                     今日任务
                 </div>
 
-                <div class="task-card" id="today-task">
+                <div class="task-card clickable" id="today-task" onclick="openPlanSelector()">
                     <div class="task-header">
                         <div class="task-check" id="task-check">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1000,6 +1198,32 @@
                     </div>
                     <button type="submit" class="form-submit" id="checkin-submit-btn">确认打卡</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- Plan Selector Modal -->
+        <div class="modal-overlay" id="plan-selector-modal">
+            <div class="modal-sheet">
+                <div class="modal-header">
+                    <div class="modal-title">选择课程</div>
+                    <button class="modal-close" onclick="closePlanSelector()">&times;</button>
+                </div>
+                <div class="plan-selector-body" id="plan-selector-body">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Member Detail Modal -->
+        <div class="modal-overlay" id="member-detail-modal">
+            <div class="modal-sheet">
+                <div class="modal-header">
+                    <div class="modal-title">学习详情</div>
+                    <button class="modal-close" onclick="closeMemberDetailModal()">&times;</button>
+                </div>
+                <div id="member-detail-body">
+                    <!-- Generated by JS -->
+                </div>
             </div>
         </div>
     </div>
@@ -1432,6 +1656,84 @@
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  Plan Selector Modal
+    // ═══════════════════════════════════════════════════════════
+    function openPlanSelector() {
+        const body = document.getElementById('plan-selector-body');
+        body.innerHTML = '';
+
+        const currentDayIndex = userSettings ? (userSettings.current_day_index || 0) : 0;
+
+        // Get completed plan days from checkins
+        const completedDays = new Set();
+        checkins.forEach(c => {
+            if (c.plan_day) completedDays.add(c.plan_day);
+        });
+
+        // Group by phase
+        const phases = {};
+        PLAN_DATA.forEach(plan => {
+            if (!phases[plan.phase]) {
+                phases[plan.phase] = [];
+            }
+            phases[plan.phase].push(plan);
+        });
+
+        Object.keys(phases).forEach(phaseName => {
+            const group = document.createElement('div');
+            group.className = 'plan-phase-group';
+
+            const header = document.createElement('div');
+            header.className = 'plan-phase-header';
+            header.textContent = phaseName;
+            group.appendChild(header);
+
+            phases[phaseName].forEach(plan => {
+                const isCompleted = completedDays.has(plan.day);
+                const isCurrent = plan.day === (currentDayIndex + 1);
+
+                const item = document.createElement('div');
+                item.className = 'plan-day-item';
+                if (isCurrent) item.classList.add('current-day');
+                if (isCompleted) item.classList.add('completed-day');
+                item.onclick = () => selectPlanDay(plan.day - 1);
+
+                item.innerHTML = `
+                    <div class="plan-day-num">${plan.day}</div>
+                    <div class="plan-day-info">
+                        <div class="plan-day-title">${plan.title}</div>
+                        <div class="plan-day-meta">${plan.duration}分钟</div>
+                    </div>
+                    ${isCompleted ? `<div class="plan-day-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
+                `;
+                group.appendChild(item);
+            });
+
+            body.appendChild(group);
+        });
+
+        document.getElementById('plan-selector-modal').classList.add('active');
+    }
+
+    function closePlanSelector() {
+        document.getElementById('plan-selector-modal').classList.remove('active');
+    }
+
+    async function selectPlanDay(dayIndex) {
+        if (!currentUser) return;
+
+        // Save to settings
+        await saveSettings({ current_day_index: dayIndex });
+        userSettings.current_day_index = dayIndex;
+
+        // Update UI
+        loadTodayPlan();
+        updateStats();
+        closePlanSelector();
+        showToast(`已切换到第 ${dayIndex + 1} 天课程`);
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  Update UI
     // ═══════════════════════════════════════════════════════════
     function updateUI() {
@@ -1661,28 +1963,49 @@
                 return;
             }
 
-            // Get checkin counts for each user
-            const { data: checkinCounts, error: countError } = await supabase
+            // Get all checkins with details
+            const { data: allCheckins, error: checkinsError } = await supabase
                 .from('checkins')
-                .select('user_id');
+                .select('user_id, plan_day, plan_title, duration, checked_in_at');
 
-            if (countError) {
-                console.error('Load checkin counts error:', countError);
+            if (checkinsError) {
+                console.error('Load checkins error:', checkinsError);
             }
 
-            // Count checkins per user
-            const userCounts = {};
-            if (checkinCounts) {
-                checkinCounts.forEach(c => {
-                    userCounts[c.user_id] = (userCounts[c.user_id] || 0) + 1;
+            // Build user stats
+            const userStats = {};
+            if (allCheckins) {
+                allCheckins.forEach(c => {
+                    if (!userStats[c.user_id]) {
+                        userStats[c.user_id] = {
+                            count: 0,
+                            completedDays: new Set(),
+                            totalMinutes: 0,
+                            lastCheckin: null
+                        };
+                    }
+                    userStats[c.user_id].count++;
+                    userStats[c.user_id].completedDays.add(c.plan_day);
+                    userStats[c.user_id].totalMinutes += (c.duration || 0);
+                    const checkinDate = new Date(c.checked_in_at);
+                    if (!userStats[c.user_id].lastCheckin || checkinDate > userStats[c.user_id].lastCheckin) {
+                        userStats[c.user_id].lastCheckin = checkinDate;
+                    }
                 });
             }
 
             // Sort by checkin count
-            const sorted = (profiles || []).map(p => ({
-                ...p,
-                checkinCount: userCounts[p.id] || 0
-            })).sort((a, b) => b.checkinCount - a.checkinCount);
+            const sorted = (profiles || []).map(p => {
+                const stats = userStats[p.id] || { count: 0, completedDays: new Set(), totalMinutes: 0, lastCheckin: null };
+                return {
+                    ...p,
+                    checkinCount: stats.count,
+                    completedCourses: stats.completedDays.size,
+                    totalMinutes: stats.totalMinutes,
+                    lastCheckin: stats.lastCheckin,
+                    progress: Math.round((stats.completedDays.size / 45) * 100)
+                };
+            }).sort((a, b) => b.checkinCount - a.checkinCount);
 
             if (sorted.length === 0) {
                 container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--gray-400);">暂无其他同学</div>';
@@ -1695,18 +2018,29 @@
                 const rank = idx + 1;
                 const firstChar = (user.display_name || user.username || '?').charAt(0);
                 const avatarColor = user.avatar_color || '#0d9488';
+                const lastCheckinText = user.lastCheckin ? formatRelativeTime(user.lastCheckin) : '未打卡';
 
                 const item = document.createElement('div');
                 item.className = 'leaderboard-item';
                 if (isMe) item.style.borderColor = 'var(--teal)';
+                item.onclick = () => openMemberDetail(user);
+
                 item.innerHTML = `
                     <div class="rank-num ${rank <= 3 ? 'top3' : ''}">${rank}</div>
                     <div class="leaderboard-avatar" style="background:linear-gradient(135deg, ${avatarColor}, ${avatarColor}cc)">${firstChar}</div>
-                    <div class="leaderboard-info">
-                        <div class="leaderboard-name">${isMe ? '你' : (user.display_name || user.username)}</div>
-                        <div class="leaderboard-meta">打卡 ${user.checkinCount} 天</div>
+                    <div class="leaderboard-progress-wrap">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="leaderboard-name">${isMe ? '你' : (user.display_name || user.username)}</div>
+                            <div style="font-size:0.8rem; font-weight:600; color:var(--navy);">${user.checkinCount}天</div>
+                        </div>
+                        <div class="leaderboard-progress-bar">
+                            <div class="leaderboard-progress-fill" style="width:${user.progress}%"></div>
+                        </div>
+                        <div class="leaderboard-progress-text">
+                            <span>已完成 ${user.completedCourses}/45 课</span>
+                            <span>${lastCheckinText}</span>
+                        </div>
                     </div>
-                    <div class="leaderboard-score">${user.checkinCount}天</div>
                 `;
                 container.appendChild(item);
             });
@@ -1714,6 +2048,121 @@
             console.error('Load leaderboard exception:', e);
             container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--gray-400);">加载失败</div>';
         }
+    }
+
+    function formatRelativeTime(date) {
+        const now = new Date();
+        const diff = now - date;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+
+        if (minutes < 1) return '刚刚';
+        if (minutes < 60) return `${minutes}分钟前`;
+        if (hours < 24) return `${hours}小时前`;
+        if (days < 7) return `${days}天前`;
+        return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Member Detail Modal
+    // ═══════════════════════════════════════════════════════════
+    async function openMemberDetail(user) {
+        const body = document.getElementById('member-detail-body');
+        const isMe = currentUser && user.id === currentUser.id;
+        const firstChar = (user.display_name || user.username || '?').charAt(0);
+        const avatarColor = user.avatar_color || '#0d9488';
+
+        body.innerHTML = '<div style="text-align:center; padding:20px; color:var(--gray-400);">加载中...</div>';
+        document.getElementById('member-detail-modal').classList.add('active');
+
+        try {
+            // Fetch member's checkins
+            const { data: memberCheckins, error } = await supabase
+                .from('checkins')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('checked_in_at', { ascending: false });
+
+            if (error) {
+                console.error('Load member checkins error:', error);
+                body.innerHTML = '<div style="text-align:center; padding:20px; color:var(--gray-400);">加载失败</div>';
+                return;
+            }
+
+            const checkinsList = memberCheckins || [];
+            const completedDays = new Set();
+            let totalMinutes = 0;
+            checkinsList.forEach(c => {
+                if (c.plan_day) completedDays.add(c.plan_day);
+                totalMinutes += (c.duration || 0);
+            });
+            const progress = Math.round((completedDays.size / 45) * 100);
+
+            const lastCheckin = checkinsList.length > 0 ? new Date(checkinsList[0].checked_in_at) : null;
+            const lastCheckinText = lastCheckin ? `${lastCheckin.getMonth() + 1}月${lastCheckin.getDate()}日` : '未打卡';
+
+            let checkinsHTML = '';
+            if (checkinsList.length === 0) {
+                checkinsHTML = '<div style="text-align:center; padding:20px; color:var(--gray-400); font-size:0.85rem;">暂无打卡记录</div>';
+            } else {
+                checkinsHTML = '<div class="member-detail-list">';
+                checkinsList.forEach(c => {
+                    const date = new Date(c.checked_in_at);
+                    const dateStr = `${date.getMonth() + 1}月${date.getDate()}日`;
+                    const moodEmoji = { good: '&#x1F60A;', normal: '&#x1F610;', bad: '&#x1F614;' }[c.mood] || '';
+                    checkinsHTML += `
+                        <div class="member-checkin-item">
+                            <div class="member-checkin-day">${c.plan_day || '-'}</div>
+                            <div class="member-checkin-info">
+                                <div class="member-checkin-title">${c.plan_title || '未知课程'}</div>
+                                <div class="member-checkin-meta">${dateStr} ${moodEmoji} ${c.note ? '· ' + c.note.substring(0, 20) + (c.note.length > 20 ? '...' : '') : ''}</div>
+                            </div>
+                            <div class="member-checkin-duration">${c.duration || 0}分钟</div>
+                        </div>
+                    `;
+                });
+                checkinsHTML += '</div>';
+            }
+
+            body.innerHTML = `
+                <div class="member-modal-avatar" style="background:linear-gradient(135deg, ${avatarColor}, ${avatarColor}cc)">${firstChar}</div>
+                <div class="member-modal-name">${isMe ? '你' : (user.display_name || user.username)}</div>
+                <div class="member-modal-stats">
+                    <div>
+                        <div class="member-modal-stat-value">${checkinsList.length}</div>
+                        <div class="member-modal-stat-label">打卡天数</div>
+                    </div>
+                    <div>
+                        <div class="member-modal-stat-value">${completedDays.size}</div>
+                        <div class="member-modal-stat-label">完成课程</div>
+                    </div>
+                    <div>
+                        <div class="member-modal-stat-value">${Math.round(totalMinutes / 60 * 10) / 10}</div>
+                        <div class="member-modal-stat-label">学习时长(小时)</div>
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:6px;">
+                        <span style="color:var(--gray-500);">总进度</span>
+                        <span style="font-weight:600; color:var(--navy);">${progress}%</span>
+                    </div>
+                    <div class="leaderboard-progress-bar">
+                        <div class="leaderboard-progress-fill" style="width:${progress}%"></div>
+                    </div>
+                </div>
+                <div style="font-size:0.8rem; color:var(--gray-400); margin-bottom:12px;">最近打卡: ${lastCheckinText}</div>
+                <div style="font-size:0.9rem; font-weight:700; color:var(--navy); margin-bottom:8px;">打卡记录</div>
+                ${checkinsHTML}
+            `;
+        } catch (e) {
+            console.error('Open member detail exception:', e);
+            body.innerHTML = '<div style="text-align:center; padding:20px; color:var(--gray-400);">加载失败</div>';
+        }
+    }
+
+    function closeMemberDetailModal() {
+        document.getElementById('member-detail-modal').classList.remove('active');
     }
 
     // ═══════════════════════════════════════════════════════════
