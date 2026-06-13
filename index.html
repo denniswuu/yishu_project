@@ -1127,6 +1127,12 @@
             errorEl.textContent = '用户名至少 2 个字符';
             return;
         }
+        // Validate username for email format: only allow a-z, 0-9, underscore, hyphen
+        const validUsername = /^[a-zA-Z0-9_-]+$/.test(username);
+        if (!validUsername) {
+            errorEl.textContent = '用户名只能包含字母、数字、下划线和横线';
+            return;
+        }
 
         btn.disabled = true;
         btn.innerHTML = '<span class="loading-spinner"></span>注册中...';
