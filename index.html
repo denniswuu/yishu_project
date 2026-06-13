@@ -429,6 +429,7 @@
             display: flex; align-items: center; justify-content: space-between;
             padding: 16px 20px;
             border-bottom: 1px solid var(--gray-100);
+            cursor: pointer;
         }
         .settings-item:last-child { border-bottom: none; }
         .settings-label { font-size: 0.95rem; font-weight: 500; }
@@ -1109,15 +1110,15 @@
                         <span class="settings-label">每日提醒</span>
                         <div class="toggle active" id="reminder-toggle" onclick="toggleReminder()"></div>
                     </div>
-                    <div class="settings-item">
+                    <div class="settings-item" onclick="changeReminderTime()">
                         <span class="settings-label">提醒时间</span>
                         <div class="settings-value" id="setting-reminder-time">20:00 &#8250;</div>
                     </div>
-                    <div class="settings-item">
+                    <div class="settings-item" onclick="changeTargetMinutes()">
                         <span class="settings-label">每日目标时长</span>
                         <div class="settings-value" id="setting-target-minutes">90分钟 &#8250;</div>
                     </div>
-                    <div class="settings-item">
+                    <div class="settings-item" onclick="changeGrade()">
                         <span class="settings-label">年级</span>
                         <div class="settings-value" id="setting-grade">初一 &#8250;</div>
                     </div>
@@ -1656,8 +1657,8 @@
 
         if (todayCheckedIn) {
             document.getElementById('today-task').classList.add('completed');
-            document.getElementById('checkin-btn').disabled = true;
-            document.getElementById('checkin-btn').innerHTML = '&#x2705; 今日已打卡';
+            document.getElementById('checkin-btn').disabled = false;
+            document.getElementById('checkin-btn').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 继续打卡';
         } else {
             document.getElementById('today-task').classList.remove('completed');
             document.getElementById('checkin-btn').disabled = false;
@@ -1781,7 +1782,6 @@
     //  Check-in Modal
     // ═══════════════════════════════════════════════════════════
     function openCheckinModal() {
-        if (todayCheckedIn) return;
         if (userSettings) {
             document.getElementById('checkin-duration').value = userSettings.target_minutes || 90;
         }
@@ -1844,8 +1844,8 @@
 
             // Update UI
             document.getElementById('today-task').classList.add('completed');
-            document.getElementById('checkin-btn').disabled = true;
-            document.getElementById('checkin-btn').innerHTML = '&#x2705; 今日已打卡';
+            document.getElementById('checkin-btn').disabled = false;
+            document.getElementById('checkin-btn').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 继续打卡';
 
             updateStats();
             closeCheckinModal();
@@ -2187,6 +2187,92 @@
             saveSettings({ reminder: isOn });
         }
         showToast(isOn ? '提醒已开启' : '提醒已关闭');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Settings: Change reminder time
+    // ═══════════════════════════════════════════════════════════
+    async function changeReminderTime() {
+        const currentTime = userSettings ? (userSettings.reminder_time || '20:00') : '20:00';
+        const newTime = prompt('请选择提醒时间（格式 HH:MM）', currentTime);
+        if (!newTime) return;
+
+        const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)$/;
+        if (!timeRegex.test(newTime)) {
+            showToast('时间格式不正确，请使用 HH:MM 格式');
+            return;
+        }
+
+        if (userSettings) {
+            userSettings.reminder_time = newTime;
+            await saveSettings({ reminder_time: newTime });
+            document.getElementById('setting-reminder-time').textContent = newTime + ' \u203A';
+            showToast('提醒时间已更新为 ' + newTime);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Settings: Change target minutes
+    // ═══════════════════════════════════════════════════════════
+    async function changeTargetMinutes() {
+        const currentMinutes = userSettings ? (userSettings.target_minutes || 90) : 90;
+        const input = prompt('请输入每日目标时长（分钟，30-300）', currentMinutes);
+        if (input === null) return;
+
+        const minutes = parseInt(input, 10);
+        if (isNaN(minutes) || minutes < 30 || minutes > 300) {
+            showToast('请输入 30-300 之间的数字');
+            return;
+        }
+
+        if (userSettings) {
+            userSettings.target_minutes = minutes;
+            await saveSettings({ target_minutes: minutes });
+            document.getElementById('setting-target-minutes').textContent = minutes + '分钟 \u203A';
+            showToast('每日目标时长已更新为 ' + minutes + ' 分钟');
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Settings: Change grade
+    // ═══════════════════════════════════════════════════════════
+    async function changeGrade() {
+        const grades = ['初一', '初二', '初三', '高一', '高二', '高三'];
+        const currentGrade = userProfile ? (userProfile.grade || '初一') : '初一';
+        const options = grades.map((g, i) => `${i + 1}. ${g}`).join('\n');
+        const input = prompt(`请选择年级（输入 1-6）：\n${options}`, grades.indexOf(currentGrade) + 1);
+        if (input === null) return;
+
+        const index = parseInt(input, 10) - 1;
+        if (isNaN(index) || index < 0 || index >= grades.length) {
+            showToast('请选择有效的年级');
+            return;
+        }
+
+        const newGrade = grades[index];
+        if (userProfile) {
+            userProfile.grade = newGrade;
+            try {
+                const { error } = await sb
+                    .from('profiles')
+                    .update({ grade: newGrade, updated_at: new Date().toISOString() })
+                    .eq('id', currentUser.id);
+
+                if (error) {
+                    console.error('Update grade error:', error);
+                    showToast('年级更新失败: ' + error.message);
+                    return;
+                }
+
+                document.getElementById('setting-grade').textContent = newGrade + ' \u203A';
+                document.getElementById('user-grade-text').textContent = `${newGrade} · 45天计划`;
+                document.getElementById('profile-grade-detail').textContent = `${newGrade} · 目标45天学完初中数学`;
+                showToast('年级已更新为 ' + newGrade);
+            } catch (err) {
+                console.error('Update grade exception:', err);
+                showToast('年级更新失败: ' + (err.message || '未知错误'));
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
