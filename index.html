@@ -1706,7 +1706,7 @@
                 const item = document.createElement('div');
                 item.className = 'plan-day-item';
                 if (isCurrent) item.classList.add('current-day');
-                if (isCompleted) item.classList.add('completed-day');
+                if (isCompleted && !isCurrent) item.classList.add('completed-day');
                 item.onclick = () => selectPlanDay(plan.day - 1);
 
                 item.innerHTML = `
