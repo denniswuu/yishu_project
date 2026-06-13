@@ -1863,12 +1863,14 @@
     //  Stats
     // ═══════════════════════════════════════════════════════════
     function updateStats() {
-        const completed = checkinDates.length;
+        // 计划进度：基于已完成的不同课程数（而非打卡天数）
+        const completedCourses = new Set(checkins.map(c => c.plan_day)).size;
+        const completed = checkinDates.length; // 打卡天数
         const totalMinutes = checkins.reduce((sum, c) => sum + (c.duration || 0), 0);
-        const progress = Math.round((completed / 45) * 100);
+        const progress = Math.round((completedCourses / 45) * 100);
         const streak = calculateStreak();
 
-        document.getElementById('completed-days').textContent = completed;
+        document.getElementById('completed-days').textContent = completedCourses;
         document.getElementById('total-minutes').textContent = totalMinutes;
         document.getElementById('progress-fill').style.width = progress + '%';
         document.getElementById('progress-percent').textContent = progress + '%';
