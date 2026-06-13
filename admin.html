@@ -1247,7 +1247,8 @@
 const SUPABASE_URL = 'https://jgbdslmuewkmtqrtbjfv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnYmRzbG11ZXdrbXRxcnRiamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDU4ODUsImV4cCI6MjA5NjkyMTg4NX0.DaZ75QO1gw9Uqw87gCYZlSzTNGngPZS6w-OYJwux1O8';
 window._yishuSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const supabase = window._yishuSupabase;
+// Assign to existing global 'supabase' without redeclaring (CDN already declares it)
+supabase = window._yishuSupabase;
 
 // ── State ──
 let currentAdmin = null;
