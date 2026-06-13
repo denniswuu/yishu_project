@@ -84,6 +84,11 @@ CREATE POLICY "Admins can view all checkins"
         )
     );
 
+-- 所有认证用户可以查看所有打卡记录（只读，用于排行榜）
+CREATE POLICY "Authenticated users can view all checkins"
+    ON public.checkins FOR SELECT
+    USING (auth.role() = 'authenticated');
+
 -- 学生只能插入自己的打卡记录
 CREATE POLICY "Students can insert own checkins"
     ON public.checkins FOR INSERT

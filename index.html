@@ -377,7 +377,10 @@
             border: 1px solid var(--gray-200);
             border-radius: var(--radius);
             margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
+        .leaderboard-item:active { transform: scale(0.98); }
         .rank-num {
             width: 28px; text-align: center;
             font-size: 0.9rem; font-weight: 700;
@@ -525,6 +528,11 @@
             50% { transform: scale(1.05); }
         }
         .pulse { animation: pulse 2s infinite; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
         /* ═══════════════════════════════════════════════════
            LOGIN / REGISTER PAGE STYLES
@@ -794,15 +802,6 @@
             background: var(--teal);
             color: white;
         }
-        .plan-day-num {
-            width: 36px; height: 36px;
-            border-radius: 10px;
-            background: var(--gray-100);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.85rem; font-weight: 700;
-            color: var(--gray-500);
-            flex-shrink: 0;
-        }
         .plan-day-info { flex: 1; }
         .plan-day-title { font-size: 0.9rem; font-weight: 600; color: var(--navy); }
         .plan-day-item.completed-day .plan-day-title { opacity: 0.6; text-decoration: line-through; }
@@ -835,19 +834,6 @@
         }
 
         /* Group page enhanced styles */
-        .leaderboard-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px 16px;
-            background: var(--white);
-            border: 1px solid var(--gray-200);
-            border-radius: var(--radius);
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .leaderboard-item:active { transform: scale(0.98); }
         .leaderboard-progress-wrap {
             flex: 1;
             min-width: 0;
@@ -1148,19 +1134,19 @@
 
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
-            <button class="nav-item active" onclick="switchPage('home')">
+            <button class="nav-item active" onclick="switchPage('home', event)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 首页
             </button>
-            <button class="nav-item" onclick="switchPage('stats')">
+            <button class="nav-item" onclick="switchPage('stats', event)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 统计
             </button>
-            <button class="nav-item" onclick="switchPage('group')">
+            <button class="nav-item" onclick="switchPage('group', event)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 小组
             </button>
-            <button class="nav-item" onclick="switchPage('profile')">
+            <button class="nav-item" onclick="switchPage('profile', event)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 我的
             </button>
@@ -1295,10 +1281,27 @@
     const SUPABASE_URL = 'https://jgbdslmuewkmtqrtbjfv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnYmRzbG11ZXdrbXRxcnRiamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDU4ODUsImV4cCI6MjA5NjkyMTg4NX0.DaZ75QO1gw9Uqw87gCYZlSzTNGngPZS6w-OYJwux1O8';
 
-    // Use a unique global variable name to avoid conflicts
-    window._yishuSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    // Assign to existing global 'supabase' without redeclaring (CDN already declares it)
-    supabase = window._yishuSupabase;
+    // Create Supabase client and assign to both global and local variable
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window._yishuSupabase = supabase;
+
+    // ═══════════════════════════════════════════════════════════
+    //  Helper: Local date string (avoid timezone issues with toISOString)
+    // ═══════════════════════════════════════════════════════════
+    function getLocalDateStr(date) {
+        const d = date || new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Helper: Escape HTML to prevent XSS
+    // ═══════════════════════════════════════════════════════════
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
 
     // ═══════════════════════════════════════════════════════════
     //  全局状态
@@ -1508,6 +1511,8 @@
                 // Fallback to user metadata
                 const meta = currentUser.user_metadata || {};
                 userProfile = {
+                    id: currentUser.id,
+                    username: meta.username || '',
                     display_name: meta.display_name || meta.username || '同学',
                     grade: '初一',
                     avatar_color: '#0d9488'
@@ -1519,6 +1524,8 @@
             console.error('Load profile exception:', e);
             const meta = currentUser.user_metadata || {};
             userProfile = {
+                id: currentUser.id,
+                username: meta.username || '',
                 display_name: meta.display_name || meta.username || '同学',
                 grade: '初一',
                 avatar_color: '#0d9488'
@@ -1600,8 +1607,9 @@
             const { error } = await supabase
                 .from('settings')
                 .upsert({
-                    user_id: currentUser.id,
+                    ...(userSettings || {}),
                     ...updates,
+                    user_id: currentUser.id,
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'user_id' });
 
@@ -1614,12 +1622,14 @@
     // ═══════════════════════════════════════════════════════════
     //  Page Switching
     // ═══════════════════════════════════════════════════════════
-    function switchPage(page) {
+    function switchPage(page, event) {
         currentPage = page;
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(`page-${page}`).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        event.target.closest('.nav-item').classList.add('active');
+        if (event && event.target) {
+            event.target.closest('.nav-item').classList.add('active');
+        }
 
         const titles = { home: '今日学习', stats: '学习统计', group: '学习小组', profile: '个人中心' };
         document.getElementById('page-title').textContent = titles[page];
@@ -1641,7 +1651,7 @@
         document.getElementById('task-phase').textContent = plan.phase;
 
         // Check if today already checked in
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateStr();
         todayCheckedIn = checkinDates.includes(today);
 
         if (todayCheckedIn) {
@@ -1826,7 +1836,7 @@
 
             // Add to local state
             checkins.push(data);
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateStr();
             if (!checkinDates.includes(today)) {
                 checkinDates.push(today);
             }
@@ -1878,13 +1888,13 @@
         checkDate.setHours(0,0,0,0);
 
         // Check if today is checked in; if not, start from yesterday
-        const todayStr = checkDate.toISOString().split('T')[0];
+        const todayStr = getLocalDateStr(checkDate);
         if (!checkinDates.includes(todayStr)) {
             checkDate.setDate(checkDate.getDate() - 1);
         }
 
         for (let i = 0; i < 365; i++) {
-            const dateStr = checkDate.toISOString().split('T')[0];
+            const dateStr = getLocalDateStr(checkDate);
             if (checkinDates.includes(dateStr)) {
                 streak++;
                 checkDate.setDate(checkDate.getDate() - 1);
@@ -1924,7 +1934,7 @@
             calendar.appendChild(el);
         }
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateStr();
 
         for (let day = 1; day <= daysInMonth; day++) {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -2030,7 +2040,7 @@
                     <div class="leaderboard-avatar" style="background:linear-gradient(135deg, ${avatarColor}, ${avatarColor}cc)">${firstChar}</div>
                     <div class="leaderboard-progress-wrap">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div class="leaderboard-name">${isMe ? '你' : (user.display_name || user.username)}</div>
+                            <div class="leaderboard-name">${isMe ? '你' : escapeHtml(user.display_name || user.username)}</div>
                             <div style="font-size:0.8rem; font-weight:600; color:var(--navy);">${user.checkinCount}天</div>
                         </div>
                         <div class="leaderboard-progress-bar">
@@ -2115,8 +2125,8 @@
                         <div class="member-checkin-item">
                             <div class="member-checkin-day">${c.plan_day || '-'}</div>
                             <div class="member-checkin-info">
-                                <div class="member-checkin-title">${c.plan_title || '未知课程'}</div>
-                                <div class="member-checkin-meta">${dateStr} ${moodEmoji} ${c.note ? '· ' + c.note.substring(0, 20) + (c.note.length > 20 ? '...' : '') : ''}</div>
+                                <div class="member-checkin-title">${escapeHtml(c.plan_title || '未知课程')}</div>
+                                <div class="member-checkin-meta">${dateStr} ${moodEmoji} ${c.note ? '· ' + escapeHtml(c.note.substring(0, 20)) + (c.note.length > 20 ? '...' : '') : ''}</div>
                             </div>
                             <div class="member-checkin-duration">${c.duration || 0}分钟</div>
                         </div>
@@ -2127,7 +2137,7 @@
 
             body.innerHTML = `
                 <div class="member-modal-avatar" style="background:linear-gradient(135deg, ${avatarColor}, ${avatarColor}cc)">${firstChar}</div>
-                <div class="member-modal-name">${isMe ? '你' : (user.display_name || user.username)}</div>
+                <div class="member-modal-name">${isMe ? '你' : escapeHtml(user.display_name || user.username)}</div>
                 <div class="member-modal-stats">
                     <div>
                         <div class="member-modal-stat-value">${checkinsList.length}</div>
@@ -2190,7 +2200,7 @@
 
         const exportObj = {
             user: userProfile ? {
-                username: userProfile.username,
+                username: userProfile.username || '',
                 display_name: userProfile.display_name,
                 grade: userProfile.grade
             } : {},
@@ -2211,7 +2221,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `一数打卡数据_${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `一数打卡数据_${getLocalDateStr()}.json`;
         a.click();
         URL.revokeObjectURL(url);
         showToast('数据导出成功');
