@@ -1282,8 +1282,8 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnYmRzbG11ZXdrbXRxcnRiamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDU4ODUsImV4cCI6MjA5NjkyMTg4NX0.DaZ75QO1gw9Uqw87gCYZlSzTNGngPZS6w-OYJwux1O8';
 
     // Create Supabase client and assign to both global and local variable
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window._yishuSupabase = supabase;
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window._yishuSupabase = sb;
 
     // ═══════════════════════════════════════════════════════════
     //  Helper: Local date string (avoid timezone issues with toISOString)
@@ -1313,7 +1313,7 @@
     let todayPlan = null;
     let userProfile = null;         // from profiles table
     let userSettings = null;        // from settings table
-    let currentUser = null;          // from supabase.auth.getUser()
+    let currentUser = null;          // from sb.auth.getUser()
     let todayCheckedIn = false;
 
     // ═══════════════════════════════════════════════════════════
@@ -1367,7 +1367,7 @@
         try {
             // Sign up with email-like format: username@yishu.app
             const email = `${username}@yishu.app`;
-            const { data, error } = await supabase.auth.signUp({
+            const { data, error } = await sb.auth.signUp({
                 email: email,
                 password: password,
                 options: {
@@ -1432,7 +1432,7 @@
 
         try {
             const email = `${username}@yishu.app`;
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await sb.auth.signInWithPassword({
                 email: email,
                 password: password
             });
@@ -1464,7 +1464,7 @@
     async function handleLogout() {
         if (!confirm('确定要退出登录吗？')) return;
         try {
-            await supabase.auth.signOut();
+            await sb.auth.signOut();
         } catch (e) {
             console.error('Logout error:', e);
         }
@@ -1500,7 +1500,7 @@
     // ═══════════════════════════════════════════════════════════
     async function loadProfile() {
         try {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('profiles')
                 .select('*')
                 .eq('id', currentUser.id)
@@ -1538,7 +1538,7 @@
     // ═══════════════════════════════════════════════════════════
     async function loadSettings() {
         try {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('settings')
                 .select('*')
                 .eq('user_id', currentUser.id)
@@ -1571,7 +1571,7 @@
     // ═══════════════════════════════════════════════════════════
     async function loadCheckins() {
         try {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('checkins')
                 .select('*')
                 .eq('user_id', currentUser.id)
@@ -1604,7 +1604,7 @@
     async function saveSettings(updates) {
         if (!currentUser) return;
         try {
-            const { error } = await supabase
+            const { error } = await sb
                 .from('settings')
                 .upsert({
                     ...(userSettings || {}),
@@ -1806,7 +1806,7 @@
             const plan = PLAN_DATA[Math.min(dayIndex, PLAN_DATA.length - 1)];
 
             // Insert checkin record to Supabase
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('checkins')
                 .insert({
                     user_id: currentUser.id,
@@ -1963,7 +1963,7 @@
 
         try {
             // Query all profiles with their checkin counts
-            const { data: profiles, error } = await supabase
+            const { data: profiles, error } = await sb
                 .from('profiles')
                 .select('id, username, display_name, avatar_color');
 
@@ -1974,7 +1974,7 @@
             }
 
             // Get all checkins with details
-            const { data: allCheckins, error: checkinsError } = await supabase
+            const { data: allCheckins, error: checkinsError } = await sb
                 .from('checkins')
                 .select('user_id, plan_day, plan_title, duration, checked_in_at');
 
@@ -2088,7 +2088,7 @@
 
         try {
             // Fetch member's checkins
-            const { data: memberCheckins, error } = await supabase
+            const { data: memberCheckins, error } = await sb
                 .from('checkins')
                 .select('*')
                 .eq('user_id', user.id)
@@ -2248,7 +2248,7 @@
     //  Init: Check existing session
     // ═══════════════════════════════════════════════════════════
     (async function init() {
-        if (!supabase) {
+        if (!sb) {
             // Supabase not configured, show auth page with error hint
             document.getElementById('auth-page').classList.add('active');
             document.getElementById('auth-error').textContent = 'Supabase 未配置，请在部署时设置环境变量';
@@ -2256,7 +2256,7 @@
         }
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await sb.auth.getSession();
 
             if (session && session.user) {
                 currentUser = session.user;
@@ -2271,7 +2271,7 @@
         }
 
         // Listen for auth state changes (e.g., tab sync)
-        supabase.auth.onAuthStateChange(async (event, session) => {
+        sb.auth.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_OUT') {
                 currentUser = null;
                 userProfile = null;
